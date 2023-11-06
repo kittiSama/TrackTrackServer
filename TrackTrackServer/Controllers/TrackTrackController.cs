@@ -4,7 +4,7 @@ using TrackTrackServerBL.Models;
 
 namespace TrackTrackServer.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("TrackTrack")]
     [ApiController]
     public class TrackTrackController : ControllerBase
     {
@@ -12,6 +12,13 @@ namespace TrackTrackServer.Controllers
         public TrackTrackController(TrackTrackDbContext context)
         {
             this.context = context;
+        }
+
+        [Route("Hello")]
+        [HttpGet]
+        public async Task<ActionResult> Hello()
+        {
+            return Ok("hi");
         }
     }
 }
