@@ -42,10 +42,10 @@ namespace TrackTrackServer.Controllers
         private long GenerateUniqueId()
         {
             long i = (long)rnd.Next(10000);
-            while(context.Users.Where(u => u.Id == i).First() != null)
+            /*while(context.Users.Where(u => u.Id == i).First() != null)
             {
                 i = rnd.Next(10000);
-            }
+            }*/
             return i;
 
         }
@@ -61,17 +61,19 @@ namespace TrackTrackServer.Controllers
                     case ("id"):
                         return Ok(context.Users.Where(u => u.Id.ToString() == value).FirstOrDefault());
                     case ("name"):
-                        return Ok(context.Users.Where(u => u.Name.ToString() == value).FirstOrDefault());
+                        return Ok(context.Users.Where(u => u.Name == value).FirstOrDefault());
                     case ("password"):
-                        return Ok(context.Users.Where(u => u.Password.ToString() == value).FirstOrDefault());
+                        return Ok(context.Users.Where(u => u.Password == value).FirstOrDefault());
                     case ("email"):
-                        return Ok(context.Users.Where(u => u.Email.ToString() == value).FirstOrDefault());
+                        return Ok(context.Users.Where(u => u.Email == value).FirstOrDefault());
                     default:
                         return BadRequest("No such user parameter");
                 }
             }
             catch (Exception ex) { return BadRequest(ex); }
         }
+
+
 
     }
 }
