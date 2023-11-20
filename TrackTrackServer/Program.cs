@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using TrackTrackServer.Services;
 using TrackTrackServerBL.Models;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -14,6 +15,7 @@ builder.Services.AddSwaggerGen();
 
 string connection = builder.Configuration.GetConnectionString("TrackTrackDB");
 builder.Services.AddDbContext<TrackTrackDbContext>(options => options.UseSqlServer(connection));
+//builder.Services.AddHttpClient<DiscogsService>();
 
 builder.Services.AddControllers().AddJsonOptions(o => o.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.Preserve);
 

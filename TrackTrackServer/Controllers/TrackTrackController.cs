@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using TrackTrackServer.Services;
 using TrackTrackServerBL.Models;
 
 namespace TrackTrackServer.Controllers
@@ -9,10 +10,12 @@ namespace TrackTrackServer.Controllers
     public class TrackTrackController : ControllerBase
     {
         TrackTrackDbContext context;
+        DiscogsService discogs;
         Random rnd;
-        public TrackTrackController(TrackTrackDbContext context)
+        public TrackTrackController(TrackTrackDbContext context, DiscogsService discogs)
         {
             this.context = context;
+            this.discogs = discogs;
             this.rnd = new Random();
         }
 
@@ -72,7 +75,19 @@ namespace TrackTrackServer.Controllers
             }
             catch (Exception ex) { return BadRequest(ex); }
         }
+        
+        [Route("GetClosestAlbums")]
+        [HttpGet]
+        public async Task<ActionResult> GetClosestAlbums(string q)
+        {
+            try
+            {
+                
+                return (Ok(discogs.GetClosestAlbums(q)));
+            }
+            catch (Exception ex) { return BadRequest(ex); }
 
+        }
 
 
     }
