@@ -12,10 +12,10 @@ namespace TrackTrackServer.Controllers
         TrackTrackDbContext context;
         DiscogsService discogs;
         Random rnd;
-        public TrackTrackController(TrackTrackDbContext context, DiscogsService discogs)
+        public TrackTrackController(TrackTrackDbContext context)
         {
             this.context = context;
-            this.discogs = discogs;
+            this.discogs = new DiscogsService();
             this.rnd = new Random();
         }
 
@@ -83,7 +83,7 @@ namespace TrackTrackServer.Controllers
             try
             {
                 
-                return (Ok(discogs.GetClosestAlbums(q)));
+                return (Ok(await discogs.GetClosestAlbums(q)));
             }
             catch (Exception ex) { return BadRequest(ex); }
 

@@ -14,16 +14,11 @@ namespace TrackTrackServer.Services
         public DiscogsService()
         {
             client = new HttpClient();
-            Console.WriteLine("aa");
-        }
-
-        public void init()
-        {
-            client = new HttpClient();
             client.DefaultRequestHeaders.Add("user-agent", "TrackTrack/0.1");
             client.DefaultRequestHeaders.Add("Authorization", "Discogs token=" + token);
-
+            Console.WriteLine("aa");
         }
+        
         public async Task<string> GetHello()
         {
             try
@@ -69,7 +64,7 @@ namespace TrackTrackServer.Services
 
                     return await response.Content.ReadAsStringAsync();
                 }
-                return "Something is Wrong";
+                return "Something went wrong " + response.StatusCode;
             }
             catch (Exception ex) { return ex.Message; }
             
