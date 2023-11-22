@@ -15,6 +15,8 @@ public partial class TrackTrackDbContext : DbContext
     {
     }
 
+    public virtual DbSet<Collection> Collections { get; set; }
+
     public virtual DbSet<SavedAlbum> SavedAlbums { get; set; }
 
     public virtual DbSet<User> Users { get; set; }
@@ -25,6 +27,23 @@ public partial class TrackTrackDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.Entity<Collection>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("collection_id_primary");
+
+            entity.ToTable("Collection");
+
+            entity.Property(e => e.Id)
+                .ValueGeneratedNever()
+                .HasColumnName("ID");
+            entity.Property(e => e.OwnerId).HasColumnName("OwnerID");
+
+            entity.HasOne(d => d.Owner).WithMany(p => p.Collections)
+                .HasForeignKey(d => d.OwnerId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("collection_ownerid_foreign");
+        });
+
         modelBuilder.Entity<SavedAlbum>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("savedalbums_id_primary");
@@ -34,12 +53,15 @@ public partial class TrackTrackDbContext : DbContext
             entity.Property(e => e.Id)
                 .ValueGeneratedNever()
                 .HasColumnName("ID");
-            entity.Property(e => e.AlbumId)
-                .HasMaxLength(255)
-                .IsFixedLength()
-                .HasColumnName("AlbumID");
+            entity.Property(e => e.AlbumId).HasColumnName("AlbumID");
+            entity.Property(e => e.CollectionId).HasColumnName("CollectionID");
             entity.Property(e => e.Date).HasColumnType("datetime");
             entity.Property(e => e.UserId).HasColumnName("UserID");
+
+            entity.HasOne(d => d.Collection).WithMany(p => p.SavedAlbums)
+                .HasForeignKey(d => d.CollectionId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("savedalbums_collectionid_foreign");
 
             entity.HasOne(d => d.User).WithMany(p => p.SavedAlbums)
                 .HasForeignKey(d => d.UserId)

@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json.Linq;
 using TrackTrackServer.Services;
 using TrackTrackServerBL.Models;
 
@@ -32,9 +33,10 @@ namespace TrackTrackServer.Controllers
         {
             try
             {
-                context.Users.Add(new User { Name = name, Password = password, Email = email, Bio = "ararara", Id = GenerateUniqueId() });
+                var id = GenerateUniqueId();
+                context.Users.Add(new User { Name = name, Password = password, Email = email, Bio = "ararara", Id = id });
                 await context.SaveChangesAsync();
-                return Ok("successfully added " + name + "to the users");
+                return Ok("successfully added " + name + " to the users, id = "+id);
             }
             catch (Exception ex)
             {
@@ -44,11 +46,11 @@ namespace TrackTrackServer.Controllers
         //this doesnt work
         private long GenerateUniqueId()
         {
-            long i = (long)rnd.Next(10000);
-            /*while(context.Users.Where(u => u.Id == i).First() != null)
+            long i = rnd.Next(1000000);
+            while(context.Users.Where(u => u.Id == i).FirstOrDefault() != null)
             {
-                i = rnd.Next(10000);
-            }*/
+                i = rnd.Next(1000000);
+            }
             return i;
 
         }
@@ -87,6 +89,31 @@ namespace TrackTrackServer.Controllers
             }
             catch (Exception ex) { return BadRequest(ex); }
 
+        }
+
+        [Route("GetClosestAlbumsShort")]
+        [HttpGet]
+        public async Task<ActionResult> GetClosestAlbumsShort(string q)
+        {
+            try
+            {
+                var res = JObject.Parse(await discogs.GetClosestAlbums(q));
+                
+                return (Ok(res["results"][0]["title"] + " - " + res["results"][0]["id"] +  "\n" +
+                    res["results"][1]["title"] + " - " + res["results"][1]["id"] +         "\n" +
+                    res["results"][2]["title"] + " - " + res["results"][2]["id"] +         "\n" +
+                    res["results"][3]["title"] + " - " + res["results"][3]["id"] +         "\n" +
+                    res["results"][4]["title"] + " - " + res["results"][4]["id"]));
+            }
+            catch (Exception ex) { return BadRequest(ex); }
+
+        }
+
+        [Route("SaveAlbum")]
+        [HttpGet]
+        public async Task<ActionResult> SaveAlbum(int userID, int albumID, int collectionID)
+        {
+            return null;
         }
 
 

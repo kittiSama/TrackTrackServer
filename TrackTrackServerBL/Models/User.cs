@@ -15,5 +15,7 @@ public partial class User
 
     public string Bio { get; set; } = null!;
 
+    public virtual ICollection<Collection> Collections { get; set; } = new List<Collection>();
+
     public virtual ICollection<SavedAlbum> SavedAlbums { get; set; } = new List<SavedAlbum>();
 }

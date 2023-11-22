@@ -7,13 +7,17 @@ public partial class SavedAlbum
 {
     public long Id { get; set; }
 
-    public string AlbumId { get; set; } = null!;
+    public long AlbumId { get; set; }
 
     public long UserId { get; set; }
 
+    public long CollectionId { get; set; }
+
     public DateTime Date { get; set; }
 
-    public long Rating { get; set; }
+    public long? Rating { get; set; }
+
+    public virtual Collection Collection { get; set; } = null!;
 
     public virtual User User { get; set; } = null!;
 }
