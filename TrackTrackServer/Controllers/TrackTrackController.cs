@@ -10,73 +10,28 @@ namespace TrackTrackServer.Controllers
     [ApiController]
     public class TrackTrackController : ControllerBase
     {
+        #region Intiation
         TrackTrackDbContext context;
         DiscogsService discogs;
         Random rnd;
+
+        const int MAXIDVALUE = 1000000;
+
         public TrackTrackController(TrackTrackDbContext context)
         {
             this.context = context;
             this.discogs = new DiscogsService();
             this.rnd = new Random();
         }
+        #endregion
 
+        #region Misc
         [Route("Hello")]
         [HttpGet]
         public async Task<ActionResult> Hello()
         {
             return Ok("hi");
         }
-
-        [Route("AddUser")]
-        [HttpGet]
-        public async Task<ActionResult> AddUser(string name, string password, string email)
-        {
-            try
-            {
-                var id = GenerateUniqueId("user");
-                context.Users.Add(new User { Name = name, Password = password, Email = email, Bio = "ararara", Id = id });
-                await context.SaveChangesAsync();
-                await CreateCollection(id, "favorites");
-                return Ok("successfully added " + name + " to the users, id = " + id);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(ex);
-            }
-        }
-
-        const int MAXIDVALUE = 1000000;
-        private long GenerateUniqueId(string type)
-        {
-            long i = rnd.Next(MAXIDVALUE);
-            switch (type)
-            {
-                case ("user"):
-                
-                    while (context.Users.Where(u => u.Id == i).FirstOrDefault() != null)
-                    {
-                        i = rnd.Next(MAXIDVALUE);
-                    }
-                    break;
-                case ("collection"):
-
-                    while (context.Collections.Where(u => u.Id == i).FirstOrDefault() != null)
-                    {
-                        i = rnd.Next(MAXIDVALUE);
-                    }
-                    break;
-                case ("savedAlbum"):
-
-                    while (context.SavedAlbums.Where(u => u.Id == i).FirstOrDefault() != null)
-                    {
-                        i = rnd.Next(MAXIDVALUE);
-                    }
-                    break;
-                default: throw (new Exception("no such type"));
-            }
-            return i;
-        }
-
         [Route("GetUsers")]
         [HttpGet]
         public async Task<ActionResult<User>> GetUsers(string param, string value)
@@ -99,7 +54,9 @@ namespace TrackTrackServer.Controllers
             }
             catch (Exception ex) { return BadRequest(ex); }
         }
+        #endregion
 
+        #region Discogs
         [Route("GetClosestAlbums")]
         [HttpGet]
         public async Task<ActionResult> GetClosestAlbums(string q)
@@ -130,6 +87,63 @@ namespace TrackTrackServer.Controllers
             catch (Exception ex) { return BadRequest(ex); }
 
         }
+        #endregion
+
+        #region Utilities
+        public long GenerateUniqueId(string type)
+        {
+            long i = rnd.Next(MAXIDVALUE);
+            switch (type)
+            {
+                case ("user"):
+
+                    while (context.Users.Where(u => u.Id == i).FirstOrDefault() != null)
+                    {
+                        i = rnd.Next(MAXIDVALUE);
+                    }
+                    break;
+                case ("collection"):
+
+                    while (context.Collections.Where(u => u.Id == i).FirstOrDefault() != null)
+                    {
+                        i = rnd.Next(MAXIDVALUE);
+                    }
+                    break;
+                case ("savedAlbum"):
+
+                    while (context.SavedAlbums.Where(u => u.Id == i).FirstOrDefault() != null)
+                    {
+                        i = rnd.Next(MAXIDVALUE);
+                    }
+                    break;
+                default: throw (new Exception("no such type"));
+            }
+            return i;
+        }
+        #endregion
+
+
+        //im actually not sure all of these work so make sure to play with them and make sure they work
+
+        #region Makenew
+
+        [Route("AddUser")]
+        [HttpGet]
+        public async Task<ActionResult> AddUser(string name, string password, string email)
+        {
+            try
+            {
+                var id = GenerateUniqueId("user");
+                context.Users.Add(new User { Name = name, Password = password, Email = email, Bio = "ararara", Id = id });
+                await context.SaveChangesAsync();
+                await CreateCollection(id, "favorites");
+                return Ok("successfully added " + name + " to the users, id = " + id);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex);
+            }
+        }
 
         [Route("SaveAlbum")]
         [HttpGet]
@@ -143,9 +157,9 @@ namespace TrackTrackServer.Controllers
                 }
                 else
                 {
-                    context.SavedAlbums.Add(new SavedAlbum() { AlbumId=albumID, CollectionId=collectionID, UserId=userID, Id=GenerateUniqueId("savedAlbum"), Date=DateTime.Now});
+                    context.SavedAlbums.Add(new SavedAlbum() { AlbumId = albumID, CollectionId = collectionID, UserId = userID, Id = GenerateUniqueId("savedAlbum"), Date = DateTime.Now });
                     await context.SaveChangesAsync();
-                    return (Ok("successfully saved "+albumID+" to your collection "+collectionID));
+                    return (Ok("successfully saved " + albumID + " to your collection " + collectionID));
                 }
             }
             catch (Exception ex) { return BadRequest(ex); };
@@ -164,13 +178,125 @@ namespace TrackTrackServer.Controllers
                 else
                 {
                     var id = GenerateUniqueId("collection");
-                    context.Collections.Add(new Collection { Name = name, OwnerId = userID, Id=id});
+                    context.Collections.Add(new Collection { Name = name, OwnerId = userID, Id = id });
                     await context.SaveChangesAsync();
-                    return (Ok("successfully added " + name + " to your collections with id = "+id));
+                    return (Ok("successfully added " + name + " to your collections with id = " + id));
                 }
             }
             catch (Exception ex) { return BadRequest(ex); };
 
         }
+
+        #endregion
+
+        #region Updates
+
+        [Route("UpdateUser")]
+        [HttpGet]
+        public async Task<ActionResult> UpdateUser(long id, string name, string password, string email, string bio)
+        {
+            try
+            {
+                var user = context.Users.Where(x => x.Id == id).FirstOrDefault();
+                if(user == null) return NotFound("no such user id");
+                user.Name = name;
+                user.Password = password;
+                user.Email = email;
+                user.Bio = bio;
+                await context.SaveChangesAsync();
+                return Ok("successfully updated user " + id);
+            }
+            catch (Exception ex) { return  BadRequest(ex.Message); }
+        }
+
+        [Route("RenameCollection")]
+        [HttpGet]
+        public async Task<ActionResult> RenameCollection(long id, string name)
+        {
+            try
+            {
+                var coll = context.Collections.Where(x => x.Id == id).FirstOrDefault();
+                if (coll == null) return NotFound("no such collection id");
+                coll.Name = name;
+                await context.SaveChangesAsync();
+                return Ok("successfully changed collection's name");
+            }
+            catch (Exception ex) { return BadRequest(ex.Message); }
+        }
+
+        [Route("UpdateRating")]
+        [HttpGet]
+        public async Task<ActionResult> UpdateRating(long id, long rating)
+        {
+            try
+            {
+                var alb = context.SavedAlbums.Where(x => x.Id == id).FirstOrDefault();
+                if (alb == null) return NotFound("no such savedAlbum id");
+                alb.Rating = rating;
+                await context.SaveChangesAsync();
+                return Ok("successfully changed "+alb.AlbumId+"'s rating");
+            }
+            catch (Exception ex) { return BadRequest(ex.Message); }
+        }
+        #endregion
+
+        #region Deletion
+        [Route("RemoveUser")]
+        [HttpGet]
+        public async Task<ActionResult> RemoveUser(long id)
+        {
+            try
+            {
+                context.SavedAlbums.RemoveRange(context.SavedAlbums.Where(x => x.UserId == id));
+                context.Collections.RemoveRange(context.Collections.Where(x => x.OwnerId == id));
+
+                context.Users.Remove(context.Users.Where(x => x.Id == id).First());
+                await context.SaveChangesAsync();
+                return Ok("successfully removed user " + id+" and all their related rows");
+            }
+            catch (Exception ex) { return BadRequest(ex.Message); }
+        }
+
+        [Route("RemoveCollection")]
+        [HttpGet]
+        public async Task<ActionResult> RemoveCollection(long id)
+        {
+            try
+            {
+                context.SavedAlbums.RemoveRange(context.SavedAlbums.Where(x => x.CollectionId == id));
+
+                context.Collections.Remove(context.Collections.Where(x => x.Id == id).First());
+                await context.SaveChangesAsync();
+                return Ok("successfully removed collection " + id + " and all albums saved in it");
+            }
+            catch (Exception ex) { return BadRequest(ex.Message); }
+        }
+
+        [Route("RemoveAlbumFromCollection")]
+        [HttpGet]
+        public async Task<ActionResult> RemoveAlbumFromCollection(long id)
+        {
+            try
+            {
+                context.SavedAlbums.Remove(context.SavedAlbums.Where(x => x.Id == id).First());
+                await context.SaveChangesAsync();
+                return Ok("successfully removed album " + id + " from its collection");
+            }
+            catch (Exception ex) { return BadRequest(ex.Message); }
+        }
+        #endregion
+
+
+        //sends all related collections for user id
+        [Route("GetUserCollections")]
+        [HttpGet]
+        public async Task<ActionResult> GetUserCollections(long id) { return null; }
+
+
+
+        //sends all related albums saved for user id
+        [Route("GetUserSavedAlbums")]
+        [HttpGet]
+        public async Task<ActionResult> GetUserSavedAlbums(long id) { return null; }
     }
 }
