@@ -33,26 +33,48 @@ namespace TrackTrackServer.Controllers
         {
             try
             {
-                var id = GenerateUniqueId();
+                var id = GenerateUniqueId("user");
                 context.Users.Add(new User { Name = name, Password = password, Email = email, Bio = "ararara", Id = id });
                 await context.SaveChangesAsync();
-                return Ok("successfully added " + name + " to the users, id = "+id);
+                await CreateCollection(id, "favorites");
+                return Ok("successfully added " + name + " to the users, id = " + id);
             }
             catch (Exception ex)
             {
                 return BadRequest(ex);
             }
         }
-        //this doesnt work
-        private long GenerateUniqueId()
+
+        const int MAXIDVALUE = 1000000;
+        private long GenerateUniqueId(string type)
         {
-            long i = rnd.Next(1000000);
-            while(context.Users.Where(u => u.Id == i).FirstOrDefault() != null)
+            long i = rnd.Next(MAXIDVALUE);
+            switch (type)
             {
-                i = rnd.Next(1000000);
+                case ("user"):
+                
+                    while (context.Users.Where(u => u.Id == i).FirstOrDefault() != null)
+                    {
+                        i = rnd.Next(MAXIDVALUE);
+                    }
+                    break;
+                case ("collection"):
+
+                    while (context.Collections.Where(u => u.Id == i).FirstOrDefault() != null)
+                    {
+                        i = rnd.Next(MAXIDVALUE);
+                    }
+                    break;
+                case ("savedAlbum"):
+
+                    while (context.SavedAlbums.Where(u => u.Id == i).FirstOrDefault() != null)
+                    {
+                        i = rnd.Next(MAXIDVALUE);
+                    }
+                    break;
+                default: throw (new Exception("no such type"));
             }
             return i;
-
         }
 
         [Route("GetUsers")]
@@ -77,14 +99,14 @@ namespace TrackTrackServer.Controllers
             }
             catch (Exception ex) { return BadRequest(ex); }
         }
-        
+
         [Route("GetClosestAlbums")]
         [HttpGet]
         public async Task<ActionResult> GetClosestAlbums(string q)
         {
             try
             {
-                
+
                 return (Ok(await discogs.GetClosestAlbums(q)));
             }
             catch (Exception ex) { return BadRequest(ex); }
@@ -98,11 +120,11 @@ namespace TrackTrackServer.Controllers
             try
             {
                 var res = JObject.Parse(await discogs.GetClosestAlbums(q));
-                
-                return (Ok(res["results"][0]["title"] + " - " + res["results"][0]["id"] +  "\n" +
-                    res["results"][1]["title"] + " - " + res["results"][1]["id"] +         "\n" +
-                    res["results"][2]["title"] + " - " + res["results"][2]["id"] +         "\n" +
-                    res["results"][3]["title"] + " - " + res["results"][3]["id"] +         "\n" +
+
+                return (Ok(res["results"][0]["title"] + " - " + res["results"][0]["id"] + "\n" +
+                    res["results"][1]["title"] + " - " + res["results"][1]["id"] + "\n" +
+                    res["results"][2]["title"] + " - " + res["results"][2]["id"] + "\n" +
+                    res["results"][3]["title"] + " - " + res["results"][3]["id"] + "\n" +
                     res["results"][4]["title"] + " - " + res["results"][4]["id"]));
             }
             catch (Exception ex) { return BadRequest(ex); }
@@ -111,11 +133,44 @@ namespace TrackTrackServer.Controllers
 
         [Route("SaveAlbum")]
         [HttpGet]
-        public async Task<ActionResult> SaveAlbum(int userID, int albumID, int collectionID)
+        public async Task<ActionResult> SaveAlbum(long userID, long albumID, long collectionID)
         {
-            return null;
+            try
+            {
+                if (context.SavedAlbums.Where(x => x.UserId == userID && x.AlbumId == albumID && x.CollectionId == collectionID).Any())
+                {
+                    return Conflict("that album is already saved in that collection");
+                }
+                else
+                {
+                    context.SavedAlbums.Add(new SavedAlbum() { AlbumId=albumID, CollectionId=collectionID, UserId=userID, Id=GenerateUniqueId("savedAlbum"), Date=DateTime.Now});
+                    await context.SaveChangesAsync();
+                    return (Ok("successfully saved "+albumID+" to your collection "+collectionID));
+                }
+            }
+            catch (Exception ex) { return BadRequest(ex); };
         }
 
+        [Route("CreateCollection")]
+        [HttpGet]
+        public async Task<ActionResult> CreateCollection(long userID, string name)
+        {
+            try
+            {
+                if (context.Collections.Where(x => x.Name == name && x.OwnerId == userID).Any())
+                {
+                    return Conflict("there is already a collection named " + name + " for user " + userID);
+                }
+                else
+                {
+                    var id = GenerateUniqueId("collection");
+                    context.Collections.Add(new Collection { Name = name, OwnerId = userID, Id=id});
+                    await context.SaveChangesAsync();
+                    return (Ok("successfully added " + name + " to your collections with id = "+id));
+                }
+            }
+            catch (Exception ex) { return BadRequest(ex); };
 
+        }
     }
 }

@@ -8,7 +8,7 @@ go
 CREATE TABLE "Collection"(
     "ID" BIGINT NOT NULL,
     "OwnerID" BIGINT NOT NULL,
-    "Name" BIGINT NOT NULL
+    "Name" NVARCHAR(255) NOT NULL
 );
 ALTER TABLE
     "Collection" ADD CONSTRAINT "collection_id_primary" PRIMARY KEY("ID");

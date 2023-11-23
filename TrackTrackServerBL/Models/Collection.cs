@@ -9,7 +9,7 @@ public partial class Collection
 
     public long OwnerId { get; set; }
 
-    public long Name { get; set; }
+    public string Name { get; set; } = null!;
 
     public virtual User Owner { get; set; } = null!;
 
