@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json.Linq;
 using TrackTrackServer.Services;
 using TrackTrackServerBL.Models;
+using TrackTrackServer.Utilities;
 
 namespace TrackTrackServer.Controllers
 {
@@ -10,12 +11,11 @@ namespace TrackTrackServer.Controllers
     [ApiController]
     public class TrackTrackController : ControllerBase
     {
+
         #region Intiation
         TrackTrackDbContext context;
         DiscogsService discogs;
         Random rnd;
-
-        const int MAXIDVALUE = 1000000;
 
         public TrackTrackController(TrackTrackDbContext context)
         {
@@ -27,38 +27,16 @@ namespace TrackTrackServer.Controllers
 
         #region Misc
         [Route("Hello")]
-        [HttpGet]
+        [HttpGet] //returns hi
         public async Task<ActionResult> Hello()
         {
             return Ok("hi");
-        }
-        [Route("GetUsers")]
-        [HttpGet]
-        public async Task<ActionResult<User>> GetUsers(string param, string value)
-        {
-            try
-            {
-                switch (param)
-                {
-                    case ("id"):
-                        return Ok(context.Users.Where(u => u.Id.ToString() == value).FirstOrDefault());
-                    case ("name"):
-                        return Ok(context.Users.Where(u => u.Name == value).FirstOrDefault());
-                    case ("password"):
-                        return Ok(context.Users.Where(u => u.Password == value).FirstOrDefault());
-                    case ("email"):
-                        return Ok(context.Users.Where(u => u.Email == value).FirstOrDefault());
-                    default:
-                        return BadRequest("No such user parameter");
-                }
-            }
-            catch (Exception ex) { return BadRequest(ex); }
         }
         #endregion
 
         #region Discogs
         [Route("GetClosestAlbums")]
-        [HttpGet]
+        [HttpGet] //gets the top 5 results when searching q, returns all of their information
         public async Task<ActionResult> GetClosestAlbums(string q)
         {
             try
@@ -71,7 +49,7 @@ namespace TrackTrackServer.Controllers
         }
 
         [Route("GetClosestAlbumsShort")]
-        [HttpGet]
+        [HttpGet] //gets the top 5 results when searching q, returns just their title and id
         public async Task<ActionResult> GetClosestAlbumsShort(string q)
         {
             try
@@ -89,52 +67,89 @@ namespace TrackTrackServer.Controllers
         }
         #endregion
 
-        #region Utilities
-        public long GenerateUniqueId(string type)
+        #region Getters
+        [Route("GetUsers")]
+        [HttpGet] //get user object from any given of their given info (should be unique to that user)
+        public async Task<ActionResult<User>> GetUsers(string param, string value)
         {
-            long i = rnd.Next(MAXIDVALUE);
-            switch (type)
+            User toReturn;
+            bool goodParam = false;
+            try
             {
-                case ("user"):
-
-                    while (context.Users.Where(u => u.Id == i).FirstOrDefault() != null)
-                    {
-                        i = rnd.Next(MAXIDVALUE);
-                    }
-                    break;
-                case ("collection"):
-
-                    while (context.Collections.Where(u => u.Id == i).FirstOrDefault() != null)
-                    {
-                        i = rnd.Next(MAXIDVALUE);
-                    }
-                    break;
-                case ("savedAlbum"):
-
-                    while (context.SavedAlbums.Where(u => u.Id == i).FirstOrDefault() != null)
-                    {
-                        i = rnd.Next(MAXIDVALUE);
-                    }
-                    break;
-                default: throw (new Exception("no such type"));
+                switch (param)
+                {
+                    case ("id"):
+                        toReturn = (context.Users.Where(u => u.Id.ToString() == value).FirstOrDefault());
+                        break;
+                    case ("name"):
+                        toReturn = (context.Users.Where(u => u.Name == value).FirstOrDefault());
+                        break;
+                    case ("password"):
+                        toReturn = (context.Users.Where(u => u.Password == value).FirstOrDefault());
+                        break;
+                    case ("email"):
+                        toReturn = context.Users.Where(u => u.Email == value).FirstOrDefault());
+                        break;
+                    default:
+                        return BadRequest("No such user parameter");
+                }
+                if (toReturn == null) return NotFound("no user matching param: " + param + " and value: " + value);
+                return (toReturn);
             }
-            return i;
+            catch (Exception ex) { return BadRequest(ex); }
+        }
+
+        [Route("GetUserCollections")]
+        [HttpGet] //gets all the user's collections
+        public async Task<ActionResult> GetUserCollections(long id)
+        {
+            try
+            {
+                var result = context.Collections.Where(x => x.OwnerId == id);
+                if (result == null) return NotFound("user " + id + " either has no collections, or doesn't exist");
+                return (Ok(result));
+            }
+            catch (Exception ex) { return BadRequest(ex.Message); }
+        }
+
+        [Route("GetUserSavedAlbums")]
+        [HttpGet] //gets all the albums in all the user's collections
+        public async Task<ActionResult> GetUserSavedAlbums(long id)
+        {
+            try
+            {
+                var result = context.SavedAlbums.Where(x => x.UserId == id);
+                if (result == null) return NotFound("user " + id + " either has no saved albums, or doesn't exist");
+                return (Ok(result));
+            }
+            catch (Exception ex) { return BadRequest(ex.Message); }
+        }
+
+        [Route("GetAlbumsInCollection")]
+        [HttpGet] //gets all albums in a collection
+        public async Task<ActionResult> GetAlbumsInCollection(long id)
+        {
+            try
+            {
+                var result = context.SavedAlbums.Where(x => x.CollectionId == id);
+                if (result == null) return NotFound("collection " + id + " either has no albums savd in it, or doesn't exist");
+                return (Ok(result));
+            }
+            catch (Exception ex) { return BadRequest(ex.Message); }
         }
         #endregion
 
-
-        //im actually not sure all of these work so make sure to play with them and make sure they work
-
-        #region Makenew
-
+        #region Create
         [Route("AddUser")]
-        [HttpGet]
+        [HttpGet] //adds user with the required params, an empty bio and a random unique id. also creates a collection named favorites for them
         public async Task<ActionResult> AddUser(string name, string password, string email)
         {
             try
             {
-                var id = GenerateUniqueId("user");
-                context.Users.Add(new User { Name = name, Password = password, Email = email, Bio = "ararara", Id = id });
+                var id = Utils.GenerateUniqueId("user", rnd, context);
+                User user = new User { Name = name, Password = password, Email = email, Bio = "", Id = id };
+                Utils.ValidateUser(user);
+                context.Users.Add(user);
                 await context.SaveChangesAsync();
                 await CreateCollection(id, "favorites");
                 return Ok("successfully added " + name + " to the users, id = " + id);
@@ -146,7 +161,7 @@ namespace TrackTrackServer.Controllers
         }
 
         [Route("SaveAlbum")]
-        [HttpGet]
+        [HttpGet] //saves an album in a specified user's collection
         public async Task<ActionResult> SaveAlbum(long userID, long albumID, long collectionID)
         {
             try
@@ -157,7 +172,7 @@ namespace TrackTrackServer.Controllers
                 }
                 else
                 {
-                    context.SavedAlbums.Add(new SavedAlbum() { AlbumId = albumID, CollectionId = collectionID, UserId = userID, Id = GenerateUniqueId("savedAlbum"), Date = DateTime.Now });
+                    context.SavedAlbums.Add(new SavedAlbum() { AlbumId = albumID, CollectionId = collectionID, UserId = userID, Id = Utils.GenerateUniqueId("savedAlbum", rnd, context), Date = DateTime.Now });
                     await context.SaveChangesAsync();
                     return (Ok("successfully saved " + albumID + " to your collection " + collectionID));
                 }
@@ -166,7 +181,7 @@ namespace TrackTrackServer.Controllers
         }
 
         [Route("CreateCollection")]
-        [HttpGet]
+        [HttpGet] // creates a new collection for a user
         public async Task<ActionResult> CreateCollection(long userID, string name)
         {
             try
@@ -177,7 +192,7 @@ namespace TrackTrackServer.Controllers
                 }
                 else
                 {
-                    var id = GenerateUniqueId("collection");
+                    var id = Utils.GenerateUniqueId("collection", rnd, context);
                     context.Collections.Add(new Collection { Name = name, OwnerId = userID, Id = id });
                     await context.SaveChangesAsync();
                     return (Ok("successfully added " + name + " to your collections with id = " + id));
@@ -190,15 +205,15 @@ namespace TrackTrackServer.Controllers
         #endregion
 
         #region Updates
-
         [Route("UpdateUser")]
-        [HttpGet]
+        [HttpGet] //updates a user based on their id (it remains constant), gets all their new information and saves it
         public async Task<ActionResult> UpdateUser(long id, string name, string password, string email, string bio)
         {
             try
             {
                 var user = context.Users.Where(x => x.Id == id).FirstOrDefault();
                 if(user == null) return NotFound("no such user id");
+                Utils.ValidateUser(user);
                 user.Name = name;
                 user.Password = password;
                 user.Email = email;
@@ -210,7 +225,7 @@ namespace TrackTrackServer.Controllers
         }
 
         [Route("RenameCollection")]
-        [HttpGet]
+        [HttpGet] //changes a collection's name
         public async Task<ActionResult> RenameCollection(long id, string name)
         {
             try
@@ -225,7 +240,7 @@ namespace TrackTrackServer.Controllers
         }
 
         [Route("UpdateRating")]
-        [HttpGet]
+        [HttpGet] //changes the rating given to an album in a collection
         public async Task<ActionResult> UpdateRating(long id, long rating)
         {
             try
@@ -242,7 +257,7 @@ namespace TrackTrackServer.Controllers
 
         #region Deletion
         [Route("RemoveUser")]
-        [HttpGet]
+        [HttpGet] //removes a user, all their collections, and all their saved albums
         public async Task<ActionResult> RemoveUser(long id)
         {
             try
@@ -258,7 +273,7 @@ namespace TrackTrackServer.Controllers
         }
 
         [Route("RemoveCollection")]
-        [HttpGet]
+        [HttpGet] //removes a collection and all albums saved in it
         public async Task<ActionResult> RemoveCollection(long id)
         {
             try
@@ -273,7 +288,7 @@ namespace TrackTrackServer.Controllers
         }
 
         [Route("RemoveAlbumFromCollection")]
-        [HttpGet]
+        [HttpGet] //removes a specific album from a specific collection
         public async Task<ActionResult> RemoveAlbumFromCollection(long id)
         {
             try
@@ -284,19 +299,7 @@ namespace TrackTrackServer.Controllers
             }
             catch (Exception ex) { return BadRequest(ex.Message); }
         }
-        #endregion
+        #endregion       
 
-
-        //sends all related collections for user id
-        [Route("GetUserCollections")]
-        [HttpGet]
-        public async Task<ActionResult> GetUserCollections(long id) { return null; }
-
-
-
-        //sends all related albums saved for user id
-        [Route("GetUserSavedAlbums")]
-        [HttpGet]
-        public async Task<ActionResult> GetUserSavedAlbums(long id) { return null; }
     }
 }
