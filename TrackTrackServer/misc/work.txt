@@ -1,0 +1,4 @@
+﻿change GET to POST when necessary
+change parameters to objects
+proper login method
+use session

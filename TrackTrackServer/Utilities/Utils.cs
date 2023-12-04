@@ -39,9 +39,9 @@ namespace TrackTrackServer.Utilities
 
         public static void ValidateUser(User user)
         {
-            if (user.Name.Length < 4) throw new Exception("name must be at least 4 characters");
-            if (!user.Email.Contains("@")) throw new Exception("email must be valid");
-            if (user.Password.Length < 6) throw new Exception("password must be at least 6 characters");
+            if (user.Name.Length < 4) throw new BadDataException("name must be at least 4 characters");
+            if (!user.Email.Contains("@")) throw new BadDataException("email must be valid");
+            if (user.Password.Length < 6) throw new BadDataException("password must be at least 6 characters");
         }
     }
 }

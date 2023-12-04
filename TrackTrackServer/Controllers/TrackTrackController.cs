@@ -88,7 +88,7 @@ namespace TrackTrackServer.Controllers
                         toReturn = (context.Users.Where(u => u.Password == value).FirstOrDefault());
                         break;
                     case ("email"):
-                        toReturn = context.Users.Where(u => u.Email == value).FirstOrDefault());
+                        toReturn = (context.Users.Where(u => u.Email == value).FirstOrDefault());
                         break;
                     default:
                         return BadRequest("No such user parameter");
@@ -141,18 +141,24 @@ namespace TrackTrackServer.Controllers
 
         #region Create
         [Route("AddUser")]
-        [HttpGet] //adds user with the required params, an empty bio and a random unique id. also creates a collection named favorites for them
-        public async Task<ActionResult> AddUser(string name, string password, string email)
+        [HttpPost] //adds user with the required params, an empty bio and a random unique id. also creates a collection named favorites for them
+        public async Task<ActionResult> AddUser(User user)
         {
             try
             {
-                var id = Utils.GenerateUniqueId("user", rnd, context);
-                User user = new User { Name = name, Password = password, Email = email, Bio = "", Id = id };
                 Utils.ValidateUser(user);
+                var id = Utils.GenerateUniqueId("user", rnd, context);
+                user.Id = id;
+               
                 context.Users.Add(user);
                 await context.SaveChangesAsync();
                 await CreateCollection(id, "favorites");
-                return Ok("successfully added " + name + " to the users, id = " + id);
+                // SessionExtensions.SetObject(this, "user", ) how does this work
+                return Ok("successfully added " + user.Name + " to the users, id = " + id);
+            }
+            catch (BadDataException ex)
+            {
+                return(Problem(ex.Message));
             }
             catch (Exception ex)
             {
@@ -161,31 +167,35 @@ namespace TrackTrackServer.Controllers
         }
 
         [Route("SaveAlbum")]
-        [HttpGet] //saves an album in a specified user's collection
-        public async Task<ActionResult> SaveAlbum(long userID, long albumID, long collectionID)
+        [HttpPost] //saves an album in a specified user's collection
+        public async Task<ActionResult> SaveAlbum(SavedAlbum save)
         {
             try
             {
-                if (context.SavedAlbums.Where(x => x.UserId == userID && x.AlbumId == albumID && x.CollectionId == collectionID).Any())
+                if (context.SavedAlbums.Where(x => x.UserId == save.UserId && x.AlbumId == save.AlbumId && x.CollectionId == save.CollectionId).Any())
                 {
                     return Conflict("that album is already saved in that collection");
                 }
                 else
                 {
-                    context.SavedAlbums.Add(new SavedAlbum() { AlbumId = albumID, CollectionId = collectionID, UserId = userID, Id = Utils.GenerateUniqueId("savedAlbum", rnd, context), Date = DateTime.Now });
+                    save.Date = DateTime.Now;
+                    save.Id = Utils.GenerateUniqueId("savedAlbum", rnd, context);
+                    if(save.Rating==null) save.Rating = 0;
+                    context.SavedAlbums.Add(save);
                     await context.SaveChangesAsync();
-                    return (Ok("successfully saved " + albumID + " to your collection " + collectionID));
+                    return (Ok("successfully saved " + save.AlbumId + " to your collection " + save.CollectionId));
                 }
             }
             catch (Exception ex) { return BadRequest(ex); };
         }
 
         [Route("CreateCollection")]
-        [HttpGet] // creates a new collection for a user
+        [HttpPost] // creates a new collection for a user
         public async Task<ActionResult> CreateCollection(long userID, string name)
         {
             try
             {
+                
                 if (context.Collections.Where(x => x.Name == name && x.OwnerId == userID).Any())
                 {
                     return Conflict("there is already a collection named " + name + " for user " + userID);
@@ -206,7 +216,7 @@ namespace TrackTrackServer.Controllers
 
         #region Updates
         [Route("UpdateUser")]
-        [HttpGet] //updates a user based on their id (it remains constant), gets all their new information and saves it
+        [HttpPost] //updates a user based on their id (it remains constant), gets all their new information and saves it
         public async Task<ActionResult> UpdateUser(long id, string name, string password, string email, string bio)
         {
             try
@@ -221,11 +231,15 @@ namespace TrackTrackServer.Controllers
                 await context.SaveChangesAsync();
                 return Ok("successfully updated user " + id);
             }
+            catch (BadDataException ex)
+            {
+                return (Problem(ex.Message));
+            }
             catch (Exception ex) { return  BadRequest(ex.Message); }
         }
 
         [Route("RenameCollection")]
-        [HttpGet] //changes a collection's name
+        [HttpPost] //changes a collection's name
         public async Task<ActionResult> RenameCollection(long id, string name)
         {
             try
@@ -240,7 +254,7 @@ namespace TrackTrackServer.Controllers
         }
 
         [Route("UpdateRating")]
-        [HttpGet] //changes the rating given to an album in a collection
+        [HttpPost] //changes the rating given to an album in a collection
         public async Task<ActionResult> UpdateRating(long id, long rating)
         {
             try
@@ -257,7 +271,7 @@ namespace TrackTrackServer.Controllers
 
         #region Deletion
         [Route("RemoveUser")]
-        [HttpGet] //removes a user, all their collections, and all their saved albums
+        [HttpDelete] //removes a user, all their collections, and all their saved albums
         public async Task<ActionResult> RemoveUser(long id)
         {
             try
@@ -273,7 +287,7 @@ namespace TrackTrackServer.Controllers
         }
 
         [Route("RemoveCollection")]
-        [HttpGet] //removes a collection and all albums saved in it
+        [HttpDelete] //removes a collection and all albums saved in it
         public async Task<ActionResult> RemoveCollection(long id)
         {
             try
@@ -288,7 +302,7 @@ namespace TrackTrackServer.Controllers
         }
 
         [Route("RemoveAlbumFromCollection")]
-        [HttpGet] //removes a specific album from a specific collection
+        [HttpDelete] //removes a specific album from a specific collection
         public async Task<ActionResult> RemoveAlbumFromCollection(long id)
         {
             try
