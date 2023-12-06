@@ -153,7 +153,7 @@ namespace TrackTrackServer.Controllers
                 context.Users.Add(user);
                 await context.SaveChangesAsync();
                 await CreateCollection(id, "favorites");
-                // SessionExtensions.SetObject(this, "user", ) how does this work
+                //HttpContext.Session.SetObject("user", user); 
                 return Ok("successfully added " + user.Name + " to the users, id = " + id);
             }
             catch (BadDataException ex)
