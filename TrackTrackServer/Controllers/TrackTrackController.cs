@@ -32,6 +32,25 @@ namespace TrackTrackServer.Controllers
         {
             return Ok("hi");
         }
+
+        [Route("Login")]
+        [HttpPost]
+        public async Task<ActionResult<User>> Login(User user)
+        {
+            try
+            {
+                User found = context.Users.Where(u => u.Name == user.Name && u.Password == user.Password).FirstOrDefault();
+                if (found != null)
+                {
+                    HttpContext.Session.SetObject("user", user);
+                    return (Ok(found)); 
+                }
+                else { return (NotFound()); }
+            }
+            catch { return BadRequest(); }
+
+        }
+
         #endregion
 
         #region Discogs
@@ -73,7 +92,6 @@ namespace TrackTrackServer.Controllers
         public async Task<ActionResult<User>> GetUsers(string param, string value)
         {
             User toReturn;
-            bool goodParam = false;
             try
             {
                 switch (param)
@@ -152,8 +170,8 @@ namespace TrackTrackServer.Controllers
                
                 context.Users.Add(user);
                 await context.SaveChangesAsync();
-                await CreateCollection(id, "favorites");
-                //HttpContext.Session.SetObject("user", user); 
+                await CreateCollection(new Collection() { Name="favorites", OwnerId=id});
+                HttpContext.Session.SetObject("user", user); 
                 return Ok("successfully added " + user.Name + " to the users, id = " + id);
             }
             catch (BadDataException ex)
@@ -191,21 +209,22 @@ namespace TrackTrackServer.Controllers
 
         [Route("CreateCollection")]
         [HttpPost] // creates a new collection for a user
-        public async Task<ActionResult> CreateCollection(long userID, string name)
+        public async Task<ActionResult> CreateCollection(Collection coll)
         {
             try
             {
                 
-                if (context.Collections.Where(x => x.Name == name && x.OwnerId == userID).Any())
+                if (context.Collections.Where(x => x.Name == coll.Name && x.OwnerId == coll.OwnerId).Any())
                 {
-                    return Conflict("there is already a collection named " + name + " for user " + userID);
+                    return Conflict("there is already a collection named " + coll.Name + " for user " + coll.OwnerId);
                 }
                 else
                 {
                     var id = Utils.GenerateUniqueId("collection", rnd, context);
-                    context.Collections.Add(new Collection { Name = name, OwnerId = userID, Id = id });
+                    coll.Id = id;
+                    context.Collections.Add(coll);
                     await context.SaveChangesAsync();
-                    return (Ok("successfully added " + name + " to your collections with id = " + id));
+                    return (Ok("successfully added " + coll.Name + " to your collections with id = " + id));
                 }
             }
             catch (Exception ex) { return BadRequest(ex); };

@@ -1,4 +1,1 @@
-﻿change GET to POST when necessary
-change parameters to objects
-proper login method
-use session
+﻿make updates work properly (probably gets param and value and changes it indivdually)
