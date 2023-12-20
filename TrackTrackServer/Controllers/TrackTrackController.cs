@@ -84,6 +84,33 @@ namespace TrackTrackServer.Controllers
             catch (Exception ex) { return BadRequest(ex); }
 
         }
+
+        [Route("GetClosestAlbumsForApp")]
+        [HttpGet] //gets the top 5 results when searching q, returns just their title and id
+        public async Task<ActionResult<Album[]>> GetClosestAlbumsForApp(string q)
+        {
+            try
+            {
+                var res = JObject.Parse(await discogs.GetClosestAlbums(q));
+                var output = new Album[5];
+
+                for (int i = 0; i < 5; i++)
+                {
+                    var titleandartist = res["results"][i]["title"].ToString();
+                    var TAA = titleandartist.Split('-');
+                    output[i] = new Album()
+                    {
+                        AlbumTitle = TAA[0].Trim(),
+                        AlbumID = (long)res["results"][i]["id"],
+                        ImageUrl = res["results"][i]["thumb"].ToString(),
+                        ArtistName = TAA[1].Trim()
+                    };
+                }
+                return (Ok(output));
+            }
+            catch (Exception ex) { return BadRequest(ex); }
+
+        }
         #endregion
 
         #region Getters
