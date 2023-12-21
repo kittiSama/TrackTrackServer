@@ -100,10 +100,10 @@ namespace TrackTrackServer.Controllers
                     var TAA = titleandartist.Split('-');
                     output[i] = new Album()
                     {
-                        AlbumTitle = TAA[0].Trim(),
+                        AlbumTitle = TAA[1].Trim(),
                         AlbumID = (long)res["results"][i]["id"],
                         ImageUrl = res["results"][i]["thumb"].ToString(),
-                        ArtistName = TAA[1].Trim()
+                        ArtistName = TAA[0].Trim()
                     };
                 }
                 return (Ok(output));
