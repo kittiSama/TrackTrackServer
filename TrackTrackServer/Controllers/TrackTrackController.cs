@@ -215,6 +215,7 @@ namespace TrackTrackServer.Controllers
         [HttpPost] //saves an album in a specified user's collection
         public async Task<ActionResult> SaveAlbum(SavedAlbum save)
         {
+            //Maya <3 Ohad
             try
             {
                 if (context.SavedAlbums.Where(x => x.UserId == save.UserId && x.AlbumId == save.AlbumId && x.CollectionId == save.CollectionId).Any())
@@ -226,6 +227,31 @@ namespace TrackTrackServer.Controllers
                     save.Date = DateTime.Now;
                     save.Id = Utils.GenerateUniqueId("savedAlbum", rnd, context);
                     if(save.Rating==null) save.Rating = 0;
+                    context.SavedAlbums.Add(save);
+                    await context.SaveChangesAsync();
+                    return (Ok("successfully saved " + save.AlbumId + " to your collection " + save.CollectionId));
+                }
+            }
+            catch (Exception ex) { return BadRequest(ex); };
+        }
+
+        [Route("SaveAlbumByName")]
+        [HttpPost] //saves an album in a specified user's collection
+        public async Task<ActionResult> SaveAlbumByName(SavedAlbum save, string collectionName)//make dto for this shit
+        {
+            try
+            {
+                var collectionID = context.Collections.Where(x => x.OwnerId == save.UserId && x.Name == collectionName).First().Id;
+                save.CollectionId = collectionID;
+                if (context.SavedAlbums.Where(x => x.UserId == save.UserId && x.AlbumId == save.AlbumId && x.CollectionId == save.CollectionId).Any())
+                {
+                    return Conflict("that album is already saved in that collection");
+                }
+                else
+                {
+                    save.Date = DateTime.Now;
+                    save.Id = Utils.GenerateUniqueId("savedAlbum", rnd, context);
+                    if (save.Rating == null) save.Rating = 0;
                     context.SavedAlbums.Add(save);
                     await context.SaveChangesAsync();
                     return (Ok("successfully saved " + save.AlbumId + " to your collection " + save.CollectionId));
