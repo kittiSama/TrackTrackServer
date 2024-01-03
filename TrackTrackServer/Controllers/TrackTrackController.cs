@@ -237,24 +237,24 @@ namespace TrackTrackServer.Controllers
 
         [Route("SaveAlbumByName")]
         [HttpPost] //saves an album in a specified user's collection
-        public async Task<ActionResult> SaveAlbumByName(SavedAlbum save, string collectionName)//make dto for this shit
+        public async Task<ActionResult> SaveAlbumByName(SaveAlbumByNameDTO dto)//make dto for this shit
         {
             try
             {
-                var collectionID = context.Collections.Where(x => x.OwnerId == save.UserId && x.Name == collectionName).First().Id;
-                save.CollectionId = collectionID;
-                if (context.SavedAlbums.Where(x => x.UserId == save.UserId && x.AlbumId == save.AlbumId && x.CollectionId == save.CollectionId).Any())
+                var collectionID = context.Collections.Where(x => x.OwnerId == dto.savedAlbum.UserId && x.Name == dto.collectionName).First().Id;
+                dto.savedAlbum.CollectionId = collectionID;
+                if (context.SavedAlbums.Where(x => x.UserId == dto.savedAlbum.UserId && x.AlbumId == dto.savedAlbum.AlbumId && x.CollectionId == dto.savedAlbum.CollectionId).Any())
                 {
                     return Conflict("that album is already saved in that collection");
                 }
                 else
                 {
-                    save.Date = DateTime.Now;
-                    save.Id = Utils.GenerateUniqueId("savedAlbum", rnd, context);
-                    if (save.Rating == null) save.Rating = 0;
-                    context.SavedAlbums.Add(save);
+                    dto.savedAlbum.Date = DateTime.Now;
+                    dto.savedAlbum.Id = Utils.GenerateUniqueId("savedAlbum", rnd, context);
+                    if (dto.savedAlbum.Rating == null) dto.savedAlbum.Rating = 0;
+                    context.SavedAlbums.Add(dto.savedAlbum);
                     await context.SaveChangesAsync();
-                    return (Ok("successfully saved " + save.AlbumId + " to your collection " + save.CollectionId));
+                    return (Ok("successfully saved " + dto.savedAlbum.AlbumId + " to your collection " + dto.savedAlbum.CollectionId));
                 }
             }
             catch (Exception ex) { return BadRequest(ex); };
