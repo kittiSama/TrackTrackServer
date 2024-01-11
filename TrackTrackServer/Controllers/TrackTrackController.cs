@@ -237,7 +237,7 @@ namespace TrackTrackServer.Controllers
 
         [Route("SaveAlbumByName")]
         [HttpPost] //saves an album in a specified user's collection
-        public async Task<ActionResult> SaveAlbumByName(SaveAlbumByNameDTO dto)//make dto for this shit
+        public async Task<ActionResult> SaveAlbumByName([FromBody] SaveAlbumByNameDTO dto)//make dto for this shit
         {
             try
             {
@@ -249,11 +249,12 @@ namespace TrackTrackServer.Controllers
                 }
                 else
                 {
+                    dto.savedAlbum.User.Id = dto.savedAlbum.UserId;
                     dto.savedAlbum.Date = DateTime.Now;
                     dto.savedAlbum.Id = Utils.GenerateUniqueId("savedAlbum", rnd, context);
                     if (dto.savedAlbum.Rating == null) dto.savedAlbum.Rating = 0;
                     context.SavedAlbums.Add(dto.savedAlbum);
-                    await context.SaveChangesAsync();
+                    await context.SaveChangesAsync(); //wtf why does it say its duplicate it literally isnt this is dumb
                     return (Ok("successfully saved " + dto.savedAlbum.AlbumId + " to your collection " + dto.savedAlbum.CollectionId));
                 }
             }
