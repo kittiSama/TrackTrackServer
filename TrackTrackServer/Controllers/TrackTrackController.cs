@@ -241,18 +241,18 @@ namespace TrackTrackServer.Controllers
         {
             try
             {
-                var collectionID = context.Collections.Where(x => x.OwnerId == dto.savedAlbum.UserId && x.Name == dto.collectionName).First().Id;
-                dto.savedAlbum.CollectionId = collectionID;
+                var collection = context.Collections.Where(x => x.OwnerId == dto.savedAlbum.User.Id && x.Name == dto.collectionName).First();
+                dto.savedAlbum.Collection = collection;
                 if (context.SavedAlbums.Where(x => x.UserId == dto.savedAlbum.UserId && x.AlbumId == dto.savedAlbum.AlbumId && x.CollectionId == dto.savedAlbum.CollectionId).Any())
                 {
                     return Conflict("that album is already saved in that collection");
                 }
                 else
                 {
-                    dto.savedAlbum.User.Id = dto.savedAlbum.UserId;
                     dto.savedAlbum.Date = DateTime.Now;
                     dto.savedAlbum.Id = Utils.GenerateUniqueId("savedAlbum", rnd, context);
                     if (dto.savedAlbum.Rating == null) dto.savedAlbum.Rating = 0;
+                    context.Users.Attach(dto.savedAlbum.User);
                     context.SavedAlbums.Add(dto.savedAlbum);
                     await context.SaveChangesAsync(); //wtf why does it say its duplicate it literally isnt this is dumb
                     return (Ok("successfully saved " + dto.savedAlbum.AlbumId + " to your collection " + dto.savedAlbum.CollectionId));
