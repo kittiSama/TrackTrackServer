@@ -172,13 +172,26 @@ namespace TrackTrackServer.Controllers
 
         [Route("GetAlbumsInCollection")]
         [HttpGet] //gets all albums in a collection
-        public async Task<ActionResult> GetAlbumsInCollection(long id)
+        public async Task<ActionResult<List<SavedAlbum>>> GetAlbumsInCollection(long id)
         {
             try
             {
-                var result = context.SavedAlbums.Where(x => x.CollectionId == id);
+                var result = context.SavedAlbums.Where(x => x.CollectionId == id).ToList();
                 if (result == null) return NotFound("collection " + id + " either has no albums savd in it, or doesn't exist");
                 return (Ok(result));
+            }
+            catch (Exception ex) { return BadRequest(ex.Message); }
+        }
+
+        [Route("GetAlbumsInCollectionByName")]
+        [HttpGet] //gets all albums in a collection
+        public async Task<ActionResult<List<SavedAlbum>>> GetAlbumsInCollectionByName(long userId, string collectionName)
+        {
+            try
+            {
+                var collection = context.Collections.Where(x => x.OwnerId == userId && x.Name == collectionName).ToList();
+                if (collection == null) return NotFound("collection " + collectionName + " either has no albums savd in it, or doesn't exist");
+                return (Ok(collection));
             }
             catch (Exception ex) { return BadRequest(ex.Message); }
         }
@@ -243,9 +256,11 @@ namespace TrackTrackServer.Controllers
             {
                 var collection = context.Collections.Where(x => x.OwnerId == dto.savedAlbum.User.Id && x.Name == dto.collectionName).First();
                 dto.savedAlbum.Collection = collection;
-                if (context.SavedAlbums.Where(x => x.UserId == dto.savedAlbum.UserId && x.AlbumId == dto.savedAlbum.AlbumId && x.CollectionId == dto.savedAlbum.CollectionId).Any())
+                var found = context.SavedAlbums.Where(x => x.UserId == dto.savedAlbum.User.Id && x.AlbumId == dto.savedAlbum.AlbumId && x.CollectionId == dto.savedAlbum.Collection.Id).FirstOrDefault();
+                if (found!=null)
                 {
-                    return Conflict("that album is already saved in that collection");
+                    context.SavedAlbums.Remove(found);
+                    return Accepted("deleted");
                 }
                 else
                 {
@@ -254,7 +269,7 @@ namespace TrackTrackServer.Controllers
                     if (dto.savedAlbum.Rating == null) dto.savedAlbum.Rating = 0;
                     context.Users.Attach(dto.savedAlbum.User);
                     context.SavedAlbums.Add(dto.savedAlbum);
-                    await context.SaveChangesAsync(); //wtf why does it say its duplicate it literally isnt this is dumb
+                    await context.SaveChangesAsync(); 
                     return (Ok("successfully saved " + dto.savedAlbum.AlbumId + " to your collection " + dto.savedAlbum.CollectionId));
                 }
             }
