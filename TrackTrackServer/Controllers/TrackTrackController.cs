@@ -87,24 +87,33 @@ namespace TrackTrackServer.Controllers
 
         [Route("GetClosestAlbumsForApp")]
         [HttpGet] //gets the top 5 results when searching q, returns just their title and id
-        public async Task<ActionResult<Album[]>> GetClosestAlbumsForApp(string q)
+        public async Task<ActionResult<AlbumAndHeart[]>> GetClosestAlbumsForApp(string q)
         {
             try
             {
                 var res = JObject.Parse(await discogs.GetClosestAlbums(q));
-                var output = new Album[5];
-
+                var output = new AlbumAndHeart[5];
+                User user = HttpContext.Session.GetObject<User>("user");
+                List<SavedAlbum> usersfavs = context.SavedAlbums.Where(x => x.UserId == user.Id && x.CollectionId == context.Collections.Where(y => y.OwnerId == user.Id && y.Name == "favorites").First().Id).ToList();
                 for (int i = 0; i < 5; i++)
                 {
                     var titleandartist = res["results"][i]["title"].ToString();
                     var TAA = titleandartist.Split('-');
-                    output[i] = new Album()
+                    output[i].album = new Album()
                     {
                         AlbumTitle = TAA[1].Trim(),
                         AlbumID = (long)res["results"][i]["id"],
                         ImageUrl = res["results"][i]["thumb"].ToString(),
                         ArtistName = TAA[0].Trim()
                     };
+                    if(usersfavs.Where(x=> x.AlbumId == (long)res["results"][i]["id"]).Any())
+                    {
+                        output[i].image = "heart_icon_happy.png";
+                    }
+                    else
+                    {
+                        output[i].image = "heart_icon.png";
+                    }
                 }
                 return (Ok(output));
             }
