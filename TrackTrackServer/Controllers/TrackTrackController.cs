@@ -42,7 +42,7 @@ namespace TrackTrackServer.Controllers
                 User found = context.Users.Where(u => u.Name == user.Name && u.Password == user.Password).FirstOrDefault();
                 if (found != null)
                 {
-                    HttpContext.Session.SetObject("user", user);
+                    HttpContext.Session.SetObject("user", found);
                     return (Ok(found)); 
                 }
                 else { return (NotFound()); }
@@ -94,11 +94,13 @@ namespace TrackTrackServer.Controllers
                 var res = JObject.Parse(await discogs.GetClosestAlbums(q));
                 var output = new AlbumAndHeart[5];
                 User user = HttpContext.Session.GetObject<User>("user");
-                List<SavedAlbum> usersfavs = context.SavedAlbums.Where(x => x.UserId == user.Id && x.CollectionId == context.Collections.Where(y => y.OwnerId == user.Id && y.Name == "favorites").First().Id).ToList();
+                var usersfavscollection = context.Collections.Where(y => y.OwnerId == user.Id && y.Name == "favorites").First();
+                List<SavedAlbum> usersfavs = context.SavedAlbums.Where(x => x.UserId == user.Id && x.CollectionId == usersfavscollection.Id).ToList();
                 for (int i = 0; i < 5; i++)
                 {
                     var titleandartist = res["results"][i]["title"].ToString();
                     var TAA = titleandartist.Split('-');
+                    output[i] = new AlbumAndHeart();
                     output[i].album = new Album()
                     {
                         AlbumTitle = TAA[1].Trim(),
