@@ -265,23 +265,45 @@ namespace TrackTrackServer.Controllers
         {
             try
             {
-                var collection = context.Collections.Where(x => x.OwnerId == dto.savedAlbum.User.Id && x.Name == dto.collectionName).First();
+                var collection = context.Collections.Where(x => x.OwnerId == HttpContext.Session.GetObject<User>("user").Id && x.Name == dto.collectionName).First();
                 dto.savedAlbum.Collection = collection;
                 var found = context.SavedAlbums.Where(x => x.UserId == dto.savedAlbum.User.Id && x.AlbumId == dto.savedAlbum.AlbumId && x.CollectionId == dto.savedAlbum.Collection.Id).FirstOrDefault();
                 if (found!=null)
                 {
-                    context.SavedAlbums.Remove(found);
-                    return Accepted("deleted");
+                    return Conflict("exists");
                 }
                 else
                 {
                     dto.savedAlbum.Date = DateTime.Now;
+                    dto.savedAlbum.User = HttpContext.Session.GetObject<User>("user");
+                    dto.savedAlbum.UserId = dto.savedAlbum.User.Id;
                     dto.savedAlbum.Id = Utils.GenerateUniqueId("savedAlbum", rnd, context);
                     if (dto.savedAlbum.Rating == null) dto.savedAlbum.Rating = 0;
                     context.Users.Attach(dto.savedAlbum.User);
                     context.SavedAlbums.Add(dto.savedAlbum);
                     await context.SaveChangesAsync(); 
                     return (Ok("successfully saved " + dto.savedAlbum.AlbumId + " to your collection " + dto.savedAlbum.CollectionId));
+                }
+            }
+            catch (Exception ex) { return BadRequest(ex); };
+        }
+        [Route("DeleteAlbumByName")]
+        [HttpPost] //saves an album in a specified user's collection
+        public async Task<ActionResult> DeleteAlbumByName([FromBody] SaveAlbumByNameDTO dto)//make dto for this shit
+        {
+            try
+            {
+                var collection = context.Collections.Where(x => x.OwnerId == HttpContext.Session.GetObject<User>("user").Id && x.Name == dto.collectionName).First();
+                dto.savedAlbum.Collection = collection;
+                var found = context.SavedAlbums.Where(x => x.UserId == dto.savedAlbum.User.Id && x.AlbumId == dto.savedAlbum.AlbumId && x.CollectionId == dto.savedAlbum.Collection.Id).FirstOrDefault();
+                if (found != null)
+                {
+                    context.SavedAlbums.Remove(found);
+                    return (Ok("deleted"));
+                }
+                else
+                {
+                    return (Conflict("doesn't exist"));
                 }
             }
             catch (Exception ex) { return BadRequest(ex); };
