@@ -1,1 +1,7 @@
-﻿make updates work properly (probably gets param and value and changes it indivdually)
+﻿ideas for charts:
+	albums per artist
+	albums per genre
+	albums per country
+	albums per style
+	albums per release year
+each of them could be personal stats and personal stats with global (all users) stats
