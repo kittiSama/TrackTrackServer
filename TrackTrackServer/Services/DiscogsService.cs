@@ -69,6 +69,22 @@ namespace TrackTrackServer.Services
             catch (Exception ex) { return ex.Message; }
             
         }
+
+        public async Task<string> GetAlbumInfo(string id)
+        {
+            try
+            {
+                string s = URL + "releases/" + id;
+                var response = await client.GetAsync(URL + "releases/" + id);
+                if(response.StatusCode == System.Net.HttpStatusCode.OK)
+                {
+                    return await response.Content.ReadAsStringAsync();
+                }
+                return "Something went wrong " + response.StatusCode;
+            }
+            catch (Exception ex) { return ex.Message; }
+        
+        }
     }
 
 }

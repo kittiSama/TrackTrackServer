@@ -122,6 +122,15 @@ namespace TrackTrackServer.Controllers
             catch (Exception ex) { return BadRequest(ex); }
 
         }
+
+        [Route("GetAlbumInfo")]
+        [HttpGet]
+        public async Task<ActionResult<string>> GetAlbumInfo(string id)
+        {
+            var s = await discogs.GetAlbumInfo(id);
+            return Ok(s);
+
+        }
         #endregion
 
         #region Getters
@@ -281,6 +290,11 @@ namespace TrackTrackServer.Controllers
                     if (dto.savedAlbum.Rating == null) dto.savedAlbum.Rating = 0;
                     context.Users.Attach(dto.savedAlbum.User);
                     context.SavedAlbums.Add(dto.savedAlbum);
+
+
+
+
+
                     await context.SaveChangesAsync(); 
                     return (Ok("successfully saved " + dto.savedAlbum.AlbumId + " to your collection " + dto.savedAlbum.CollectionId));
                 }
