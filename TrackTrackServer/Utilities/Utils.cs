@@ -32,6 +32,20 @@ namespace TrackTrackServer.Utilities
                         i = rnd.Next(MAXIDVALUE);
                     }
                     break;
+                case ("AlbumGenre"):
+
+                    while (context.AlbumGenres.Where(u => u.Id == i).FirstOrDefault() != null)
+                    {
+                        i = rnd.Next(MAXIDVALUE);
+                    }
+                    break;
+                case ("AlbumStyle"):
+
+                    while (context.AlbumStyles.Where(u => u.Id == i).FirstOrDefault() != null)
+                    {
+                        i = rnd.Next(MAXIDVALUE);
+                    }
+                    break;
                 default: throw (new Exception("no such type"));
             }
             return i;

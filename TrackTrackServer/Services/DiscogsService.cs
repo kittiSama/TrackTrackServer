@@ -70,7 +70,7 @@ namespace TrackTrackServer.Services
             
         }
 
-        public async Task<string> GetAlbumInfo(string id)
+        public async Task<string> GetAlbumInfo(long id)
         {
             try
             {

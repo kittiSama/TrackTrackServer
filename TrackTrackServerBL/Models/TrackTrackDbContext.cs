@@ -15,6 +15,12 @@ public partial class TrackTrackDbContext : DbContext
     {
     }
 
+    public virtual DbSet<AlbumDatum> AlbumData { get; set; }
+
+    public virtual DbSet<AlbumGenre> AlbumGenres { get; set; }
+
+    public virtual DbSet<AlbumStyle> AlbumStyles { get; set; }
+
     public virtual DbSet<Collection> Collections { get; set; }
 
     public virtual DbSet<SavedAlbum> SavedAlbums { get; set; }
@@ -27,6 +33,50 @@ public partial class TrackTrackDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.Entity<AlbumDatum>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("albumdata_id_primary");
+
+            entity.Property(e => e.Id)
+                .ValueGeneratedNever()
+                .HasColumnName("ID");
+            entity.Property(e => e.ArtistId).HasColumnName("ArtistID");
+            entity.Property(e => e.ArtistName).HasMaxLength(255);
+            entity.Property(e => e.Country).HasMaxLength(255);
+        });
+
+        modelBuilder.Entity<AlbumGenre>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("albumgenres_id_primary");
+
+            entity.Property(e => e.Id)
+                .ValueGeneratedNever()
+                .HasColumnName("ID");
+            entity.Property(e => e.AlbumId).HasColumnName("AlbumID");
+            entity.Property(e => e.Genre).HasMaxLength(255);
+
+            entity.HasOne(d => d.Album).WithMany(p => p.AlbumGenres)
+                .HasForeignKey(d => d.AlbumId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("albumgenres_albumid_foreign");
+        });
+
+        modelBuilder.Entity<AlbumStyle>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("albumstyles_id_primary");
+
+            entity.Property(e => e.Id)
+                .ValueGeneratedNever()
+                .HasColumnName("ID");
+            entity.Property(e => e.AlbumId).HasColumnName("AlbumID");
+            entity.Property(e => e.Style).HasMaxLength(255);
+
+            entity.HasOne(d => d.Album).WithMany(p => p.AlbumStyles)
+                .HasForeignKey(d => d.AlbumId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("albumstyles_albumid_foreign");
+        });
+
         modelBuilder.Entity<Collection>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("collection_id_primary");
@@ -36,6 +86,7 @@ public partial class TrackTrackDbContext : DbContext
             entity.Property(e => e.Id)
                 .ValueGeneratedNever()
                 .HasColumnName("ID");
+            entity.Property(e => e.Name).HasMaxLength(255);
             entity.Property(e => e.OwnerId).HasColumnName("OwnerID");
 
             entity.HasOne(d => d.Owner).WithMany(p => p.Collections)
@@ -57,6 +108,11 @@ public partial class TrackTrackDbContext : DbContext
             entity.Property(e => e.CollectionId).HasColumnName("CollectionID");
             entity.Property(e => e.Date).HasColumnType("datetime");
             entity.Property(e => e.UserId).HasColumnName("UserID");
+
+            entity.HasOne(d => d.Album).WithMany(p => p.SavedAlbums)
+                .HasForeignKey(d => d.AlbumId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("savedalbums_albumid_foreign");
 
             entity.HasOne(d => d.Collection).WithMany(p => p.SavedAlbums)
                 .HasForeignKey(d => d.CollectionId)

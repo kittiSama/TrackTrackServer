@@ -3,7 +3,9 @@ using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json.Linq;
 using TrackTrackServer.Services;
 using TrackTrackServerBL.Models;
+using TrackTrackServer.AdditionalModels;
 using TrackTrackServer.Utilities;
+using TrackTrackServer.DTO;
 
 namespace TrackTrackServer.Controllers
 {
@@ -123,14 +125,6 @@ namespace TrackTrackServer.Controllers
 
         }
 
-        [Route("GetAlbumInfo")]
-        [HttpGet]
-        public async Task<ActionResult<string>> GetAlbumInfo(string id)
-        {
-            var s = await discogs.GetAlbumInfo(id);
-            return Ok(s);
-
-        }
         #endregion
 
         #region Getters
@@ -291,10 +285,42 @@ namespace TrackTrackServer.Controllers
                     context.Users.Attach(dto.savedAlbum.User);
                     context.SavedAlbums.Add(dto.savedAlbum);
 
+                    if (!context.AlbumData.Where(x => x.Id == dto.savedAlbum.AlbumId).Any())
+                    {
 
 
+                        string albumData = await discogs.GetAlbumInfo(dto.savedAlbum.AlbumId);
+                        var dataJson = JObject.Parse(albumData);
+                        AlbumDatum albumDatum = new AlbumDatum() {
+                            Id = (long)dataJson["id"],
+                            ArtistId = (long)dataJson["artists"][0]["id"],
+                            ArtistName = dataJson["artists"][0]["name"].ToString(),
+                            Country = dataJson["country"].ToString(),
+                            Year = (long)dataJson["year"],
+                        };
+                        context.AlbumData.Add(albumDatum);
 
+                        foreach (string genre in dataJson["genres"].ToList())
+                        {
+                            context.AlbumGenres.Add(new()
+                            {
+                                Id = Utils.GenerateUniqueId("AlbumGenre", rnd, context),
+                                AlbumId = dto.savedAlbum.AlbumId,
+                                Genre = genre
+                            });
+                        }
 
+                        foreach (string style in dataJson["styles"].ToList())
+                        {
+                            context.AlbumStyles.Add(new()
+                            {
+                                Id = Utils.GenerateUniqueId("AlbumStyle", rnd, context),
+                                AlbumId = dto.savedAlbum.AlbumId,
+                                Style = style
+                            });
+                        }
+
+                    }
                     await context.SaveChangesAsync(); 
                     return (Ok("successfully saved " + dto.savedAlbum.AlbumId + " to your collection " + dto.savedAlbum.CollectionId));
                 }
