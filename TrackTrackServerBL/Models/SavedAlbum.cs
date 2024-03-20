@@ -17,9 +17,11 @@ public partial class SavedAlbum
 
     public long? Rating { get; set; }
 
+    
     public virtual AlbumDatum Album { get; set; } = null!;
 
     public virtual Collection Collection { get; set; } = null!;
 
     public virtual User User { get; set; } = null!;
+
 }
