@@ -283,13 +283,14 @@ namespace TrackTrackServer.Controllers
                     dto.savedAlbum.Id = Utils.GenerateUniqueId("savedAlbum", rnd, context);
                     if (dto.savedAlbum.Rating == null) dto.savedAlbum.Rating = 0;
                     context.Users.Attach(dto.savedAlbum.User);
+                    var tempId = dto.savedAlbum.AlbumId;
                     context.SavedAlbums.Add(dto.savedAlbum);
 
-                    if (!context.AlbumData.Where(x => x.Id == dto.savedAlbum.AlbumId).Any())
+                    if (!context.AlbumData.Where(x => x.Id == tempId).Any())
                     {
 
 
-                        string albumData = await discogs.GetAlbumInfo(dto.savedAlbum.AlbumId);
+                        string albumData = await discogs.GetAlbumInfo(tempId);
                         var dataJson = JObject.Parse(albumData);
                         AlbumDatum albumDatum = new AlbumDatum() {
                             Id = (long)dataJson["id"],
