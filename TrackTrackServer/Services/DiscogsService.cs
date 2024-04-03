@@ -55,13 +55,6 @@ namespace TrackTrackServer.Services
                 var response = await client.GetAsync(URL + "database/search?q="+q+"&per_page=5&type=release");
                 if (response.StatusCode == System.Net.HttpStatusCode.OK)
                 {
-                    //var lib = JObject.Parse(await response.Content.ReadAsStringAsync());
-
-                    //var release = await client.GetAsync(URL + "releases/" + lib["results"][0]["id"]);
-                    //Console.WriteLine(await release.Content.ReadAsStringAsync());
-                    //var lib2 = JObject.Parse(await release.Content.ReadAsStringAsync());
-                    //await Console.Out.WriteLineAsync("release year: " + lib2["year"] + " genres: " + lib2["genres"][0] + " styles: " + lib2["styles"][0] + " & " + lib2["styles"][1]);
-
                     return await response.Content.ReadAsStringAsync();
                 }
                 return "Something went wrong " + response.StatusCode;

@@ -284,7 +284,10 @@ namespace TrackTrackServer.Controllers
                     if (dto.savedAlbum.Rating == null) dto.savedAlbum.Rating = 0;
                     context.Users.Attach(dto.savedAlbum.User);
                     var tempId = dto.savedAlbum.AlbumId;
+
+                    dto.savedAlbum.Album.Id = tempId;
                     context.SavedAlbums.Add(dto.savedAlbum);
+                    await context.SaveChangesAsync();
 
                     if (!context.AlbumData.Where(x => x.Id == tempId).Any())
                     {
@@ -301,6 +304,8 @@ namespace TrackTrackServer.Controllers
                         };
                         context.AlbumData.Add(albumDatum);
 
+                        await context.SaveChangesAsync();
+
                         foreach (string genre in dataJson["genres"].ToList())
                         {
                             context.AlbumGenres.Add(new()
@@ -310,6 +315,7 @@ namespace TrackTrackServer.Controllers
                                 Genre = genre
                             });
                         }
+                        await context.SaveChangesAsync();
 
                         foreach (string style in dataJson["styles"].ToList())
                         {
