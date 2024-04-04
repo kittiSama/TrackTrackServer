@@ -277,31 +277,21 @@ namespace TrackTrackServer.Controllers
                 }
                 else
                 {
-                    dto.savedAlbum.Date = DateTime.Now;
-                    dto.savedAlbum.User = HttpContext.Session.GetObject<User>("user");
-                    dto.savedAlbum.UserId = dto.savedAlbum.User.Id;
-                    dto.savedAlbum.Id = Utils.GenerateUniqueId("savedAlbum", rnd, context);
-                    if (dto.savedAlbum.Rating == null) dto.savedAlbum.Rating = 0;
-                    context.Users.Attach(dto.savedAlbum.User);
-                    var tempId = dto.savedAlbum.AlbumId;
-
-                    dto.savedAlbum.Album.Id = tempId;
-                    context.SavedAlbums.Add(dto.savedAlbum);
-                    await context.SaveChangesAsync();
-
-                    if (!context.AlbumData.Where(x => x.Id == tempId).Any())
+                    if (!context.AlbumData.Where(x => x.Id == dto.savedAlbum.AlbumId).Any())
                     {
 
 
-                        string albumData = await discogs.GetAlbumInfo(tempId);
+                        string albumData = await discogs.GetAlbumInfo(dto.savedAlbum.AlbumId);
                         var dataJson = JObject.Parse(albumData);
-                        AlbumDatum albumDatum = new AlbumDatum() {
+                        AlbumDatum albumDatum = new AlbumDatum()
+                        {
                             Id = (long)dataJson["id"],
                             ArtistId = (long)dataJson["artists"][0]["id"],
                             ArtistName = dataJson["artists"][0]["name"].ToString(),
                             Country = dataJson["country"].ToString(),
                             Year = (long)dataJson["year"],
                         };
+                        dto.savedAlbum.Album = albumDatum;
                         context.AlbumData.Add(albumDatum);
 
                         await context.SaveChangesAsync();
@@ -328,7 +318,21 @@ namespace TrackTrackServer.Controllers
                         }
 
                     }
-                    await context.SaveChangesAsync(); 
+
+                    dto.savedAlbum.Date = DateTime.Now;
+                    dto.savedAlbum.User = HttpContext.Session.GetObject<User>("user");
+                    dto.savedAlbum.UserId = dto.savedAlbum.User.Id;
+                    dto.savedAlbum.Id = Utils.GenerateUniqueId("savedAlbum", rnd, context);
+                    if (dto.savedAlbum.Rating == null) dto.savedAlbum.Rating = 0;
+                    context.Users.Attach(dto.savedAlbum.User);
+
+
+                    dto.savedAlbum.Album.Id = dto.savedAlbum.AlbumId;
+                    context.AlbumData.Attach(dto.savedAlbum.Album);
+
+                    context.SavedAlbums.Add(dto.savedAlbum);
+                    await context.SaveChangesAsync();
+
                     return (Ok("successfully saved " + dto.savedAlbum.AlbumId + " to your collection " + dto.savedAlbum.CollectionId));
                 }
             }
@@ -481,7 +485,16 @@ namespace TrackTrackServer.Controllers
             }
             catch (Exception ex) { return BadRequest(ex.Message); }
         }
-        #endregion       
+        #endregion
 
+        #region Graphs
+        [Route("GetArtistGraph")]
+        [HttpGet]
+        public async void GetArtistGraph()//not void, should send each artist and how many saved albums the curr user has of them
+        {
+            await Console.Out.WriteLineAsync("p");
+        } 
+
+        #endregion
     }
 }
