@@ -6,6 +6,7 @@ using TrackTrackServerBL.Models;
 using TrackTrackServer.AdditionalModels;
 using TrackTrackServer.Utilities;
 using TrackTrackServer.DTO;
+using Microsoft.EntityFrameworkCore;
 
 namespace TrackTrackServer.Controllers
 {
@@ -488,11 +489,30 @@ namespace TrackTrackServer.Controllers
         #endregion
 
         #region Graphs
-        [Route("GetArtistGraph")]
+        [Route("GetArtistChartValues")]
         [HttpGet]
-        public async void GetArtistGraph()//not void, should send each artist and how many saved albums the curr user has of them
+        public async Task<ActionResult<StringAndValue[]>> GetArtistChartValues()//not void, should send each artist and how many saved albums the curr user has of them
         {
-            await Console.Out.WriteLineAsync("p");
+            try
+            {
+
+                var currUserId = HttpContext.Session.GetObject<User>("user").Id;
+                var userSaved = context.SavedAlbums.Include(x => x.Album).Where(x => x.UserId == currUserId).ToList();
+                var distinctArtists = userSaved.DistinctBy(x => x.Album.ArtistName);
+                StringAndValue[] toReturn = new StringAndValue[distinctArtists.Count()];
+                int i = 0;
+                foreach (var item in distinctArtists)
+                {
+                    toReturn[i] = new StringAndValue(item.Album.ArtistName, userSaved.Where(x => x.Album.ArtistName == item.Album.ArtistName).Count());
+                    i++;
+                }
+                return (Ok(toReturn));
+            }
+            catch
+            {
+                return (BadRequest());
+            }
+
         } 
 
         #endregion
