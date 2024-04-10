@@ -52,7 +52,7 @@ namespace TrackTrackServer.Services
             try
             {
 
-                var response = await client.GetAsync(URL + "database/search?q="+q+"&per_page=5&type=release");
+                var response = await client.GetAsync(URL + "database/search?q="+q+"&per_page=50&type=release");
                 if (response.StatusCode == System.Net.HttpStatusCode.OK)
                 {
                     return await response.Content.ReadAsStringAsync();

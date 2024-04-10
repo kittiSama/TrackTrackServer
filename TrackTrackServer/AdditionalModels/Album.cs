@@ -15,5 +15,11 @@ namespace TrackTrackServer.AdditionalModels
         public string AlbumTitle { get; set; }
 
         public string ArtistName {  get; set; }
+
+        public string Year { get; set; }
+
+        public string Genre {  get; set; }
+
+        public string Style {  get; set; }
     }
 }

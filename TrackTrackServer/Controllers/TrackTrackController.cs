@@ -99,25 +99,51 @@ namespace TrackTrackServer.Controllers
                 User user = HttpContext.Session.GetObject<User>("user");
                 var usersfavscollection = context.Collections.Where(y => y.OwnerId == user.Id && y.Name == "favorites").First();
                 List<SavedAlbum> usersfavs = context.SavedAlbums.Where(x => x.UserId == user.Id && x.CollectionId == usersfavscollection.Id).ToList();
+                bool copy = false;
+                int bonus = 0;
                 for (int i = 0; i < 5; i++)
                 {
-                    var titleandartist = res["results"][i]["title"].ToString();
+                    var titleandartist = res["results"][i+bonus]["title"].ToString();
                     var TAA = titleandartist.Split('-');
-                    output[i] = new AlbumAndHeart();
-                    output[i].album = new Album()
+                    copy = false; 
+                    foreach(var prev in output)
                     {
-                        AlbumTitle = TAA[1].Trim(),
-                        AlbumID = (long)res["results"][i]["id"],
-                        ImageUrl = res["results"][i]["thumb"].ToString(),
-                        ArtistName = TAA[0].Trim()
-                    };
-                    if(usersfavs.Where(x=> x.AlbumId == (long)res["results"][i]["id"]).Any())
-                    {
-                        output[i].image = "heart_icon_happy.png";
+                        if (prev != null)
+                        {
+                            if (prev.album.AlbumTitle == TAA[1].Trim() && prev.album.ArtistName == TAA[0].Trim())
+                            {
+                                if (bonus + i < 45)
+                                {
+                                    copy = true;
+                                    i--;
+                                    bonus++;
+                                    break;
+
+                                }
+                            }
+                        }
                     }
-                    else
+                    if (!copy)
                     {
-                        output[i].image = "heart_icon.png";
+                        output[i] = new AlbumAndHeart();
+                        output[i].album = new Album()
+                        {
+                            AlbumTitle = TAA[1].Trim(),
+                            AlbumID = (long)res["results"][i+bonus]["id"],
+                            ImageUrl = res["results"][i + bonus]["thumb"].ToString(),
+                            ArtistName = TAA[0].Trim(),
+                            Year = res["results"][i + bonus]["year"].ToString(),
+                            Genre = res["results"][i + bonus]["genre"][0].ToString(),
+                            Style = res["results"][i + bonus]["style"][0].ToString()
+                        };
+                        if (usersfavs.Where(x => x.AlbumId == (long)res["results"][i + bonus]["id"]).Any())
+                        {
+                            output[i].image = "heart_icon_happy.png";
+                        }
+                        else
+                        {
+                            output[i].image = "heart_icon.png";
+                        }
                     }
                 }
                 return (Ok(output));
