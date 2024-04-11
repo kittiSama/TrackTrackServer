@@ -7,6 +7,7 @@ using TrackTrackServer.AdditionalModels;
 using TrackTrackServer.Utilities;
 using TrackTrackServer.DTO;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 
 namespace TrackTrackServer.Controllers
 {
@@ -105,6 +106,7 @@ namespace TrackTrackServer.Controllers
                 {
                     var titleandartist = res["results"][i+bonus]["title"].ToString();
                     var TAA = titleandartist.Split('-');
+                    if (TAA[1] == null) TAA[1] = "null";
                     copy = false; 
                     foreach(var prev in output)
                     {
@@ -126,16 +128,22 @@ namespace TrackTrackServer.Controllers
                     if (!copy)
                     {
                         output[i] = new AlbumAndHeart();
+                        var currResult = res["results"][i + bonus];
+
                         output[i].album = new Album()
                         {
                             AlbumTitle = TAA[1].Trim(),
-                            AlbumID = (long)res["results"][i+bonus]["id"],
-                            ImageUrl = res["results"][i + bonus]["thumb"].ToString(),
+                            AlbumID = (long)currResult["id"],
+                            ImageUrl = currResult["thumb"].ToString(),
                             ArtistName = TAA[0].Trim(),
-                            Year = res["results"][i + bonus]["year"].ToString(),
-                            Genre = res["results"][i + bonus]["genre"][0].ToString(),
-                            Style = res["results"][i + bonus]["style"][0].ToString()
                         };
+                        if (currResult["year"]==null) output[i].album.Year = "0";
+                        else output[i].album.Year = currResult["year"].ToString();
+                        if (currResult["genre"].IsNullOrEmpty()) output[i].album.Genre = "No Genre";
+                        else output[i].album.Genre = currResult["genre"][0].ToString();
+                        if (currResult["style"].IsNullOrEmpty()) output[i].album.Style = "No Style";
+                        else output[i].album.Style = currResult["style"][0].ToString();
+
                         if (usersfavs.Where(x => x.AlbumId == (long)res["results"][i + bonus]["id"]).Any())
                         {
                             output[i].image = "heart_icon_happy.png";
@@ -517,7 +525,7 @@ namespace TrackTrackServer.Controllers
         #region Graphs
         [Route("GetArtistChartValues")]
         [HttpGet]
-        public async Task<ActionResult<StringAndValue[]>> GetArtistChartValues()//not void, should send each artist and how many saved albums the curr user has of them
+        public async Task<ActionResult<List<StringAndValue>>> GetArtistChartValues()//not void, should send each artist and how many saved albums the curr user has of them
         {
             try
             {
@@ -525,13 +533,15 @@ namespace TrackTrackServer.Controllers
                 var currUserId = HttpContext.Session.GetObject<User>("user").Id;
                 var userSaved = context.SavedAlbums.Include(x => x.Album).Where(x => x.UserId == currUserId).ToList();
                 var distinctArtists = userSaved.DistinctBy(x => x.Album.ArtistName);
-                StringAndValue[] toReturn = new StringAndValue[distinctArtists.Count()];
+                //StringAndValue[] toReturn = new StringAndValue[distinctArtists.Count()];
+                List<StringAndValue> toReturn = new List<StringAndValue>();
                 int i = 0;
                 foreach (var item in distinctArtists)
                 {
-                    toReturn[i] = new StringAndValue(item.Album.ArtistName, userSaved.Where(x => x.Album.ArtistName == item.Album.ArtistName).Count());
+                    toReturn.Add(new StringAndValue(item.Album.ArtistName, userSaved.Where(x => x.Album.ArtistName == item.Album.ArtistName).Count()));
                     i++;
                 }
+                toReturn.Sort(new StringAndValueComparer());
                 return (Ok(toReturn));
             }
             catch
@@ -539,7 +549,83 @@ namespace TrackTrackServer.Controllers
                 return (BadRequest());
             }
 
-        } 
+        }
+
+        [Route("GetGenreChartValues")]
+        [HttpGet]
+        public async Task<ActionResult<List<StringAndValue>>> GetGenreChartValues()//not void, should send each artist and how many saved albums the curr user has of them
+        {
+            try
+            {
+
+                var currUserId = HttpContext.Session.GetObject<User>("user").Id;
+                var userSaved = context.SavedAlbums.Include(x => x.Album).Include(x=>x.Album.AlbumGenres).Where(x => x.UserId == currUserId).ToList();
+                List<StringAndValue> toReturn = new List<StringAndValue>();
+                int i = 0;
+                foreach (var item in userSaved)
+                {
+                    foreach (var genre in item.Album.AlbumGenres)
+                    {
+                        bool found = false;
+                        foreach(var savedGenre in toReturn)
+                        {
+                            if(savedGenre.String == genre.Genre)
+                            {
+                                savedGenre.Value++;
+                                found = true;
+                                break;
+                            }
+                        }
+                        if (!found) toReturn.Add(new(genre.Genre, 1));
+                    }
+                }
+                toReturn.Sort(new StringAndValueComparer());
+                return (Ok(toReturn));
+            }
+            catch
+            {
+                return (BadRequest());
+            }
+
+        }
+
+        [Route("GetStyleChartValues")]
+        [HttpGet]
+        public async Task<ActionResult<List<StringAndValue>>> GetStyleChartValues()//not void, should send each artist and how many saved albums the curr user has of them
+        {
+            try
+            {
+
+                var currUserId = HttpContext.Session.GetObject<User>("user").Id;
+                var userSaved = context.SavedAlbums.Include(x => x.Album).Include(x => x.Album.AlbumStyles).Where(x => x.UserId == currUserId).ToList();
+                List<StringAndValue> toReturn = new List<StringAndValue>();
+                int i = 0;
+                foreach (var item in userSaved)
+                {
+                    foreach (var style in item.Album.AlbumStyles)
+                    {
+                        bool found = false;
+                        foreach (var savedStyle in toReturn)
+                        {
+                            if (savedStyle.String == style.Style)
+                            {
+                                savedStyle.Value++;
+                                found = true;
+                                break;
+                            }
+                        }
+                        if (!found) toReturn.Add(new(style.Style, 1));
+                    }
+                }
+                toReturn.Sort(new StringAndValueComparer());
+                return (Ok(toReturn));
+            }
+            catch
+            {
+                return (BadRequest());
+            }
+
+        }
 
         #endregion
     }

@@ -10,4 +10,24 @@
             Value = v;
         }
     }
+    public class StringAndValueComparer : IComparer<StringAndValue>
+    {
+        int IComparer<StringAndValue>.Compare(StringAndValue a, StringAndValue b)
+        {
+            if (a.Value > b.Value)
+            {
+                return 1;
+            }
+            if (a.Value < b.Value)
+            {
+                return -1;
+            }
+            if (a.Value == b.Value)
+            {
+                return 0;
+            }
+            throw (new ArgumentException("missing value"));
+
+        }
+    }
 }
