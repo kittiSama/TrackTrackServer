@@ -561,7 +561,6 @@ namespace TrackTrackServer.Controllers
                 var currUserId = HttpContext.Session.GetObject<User>("user").Id;
                 var userSaved = context.SavedAlbums.Include(x => x.Album).Include(x=>x.Album.AlbumGenres).Where(x => x.UserId == currUserId).ToList();
                 List<StringAndValue> toReturn = new List<StringAndValue>();
-                int i = 0;
                 foreach (var item in userSaved)
                 {
                     foreach (var genre in item.Album.AlbumGenres)
@@ -599,7 +598,6 @@ namespace TrackTrackServer.Controllers
                 var currUserId = HttpContext.Session.GetObject<User>("user").Id;
                 var userSaved = context.SavedAlbums.Include(x => x.Album).Include(x => x.Album.AlbumStyles).Where(x => x.UserId == currUserId).ToList();
                 List<StringAndValue> toReturn = new List<StringAndValue>();
-                int i = 0;
                 foreach (var item in userSaved)
                 {
                     foreach (var style in item.Album.AlbumStyles)
@@ -618,6 +616,47 @@ namespace TrackTrackServer.Controllers
                     }
                 }
                 toReturn.Sort(new StringAndValueComparer());
+                return (Ok(toReturn));
+            }
+            catch
+            {
+                return (BadRequest());
+            }
+
+        }
+
+        [Route("GetYearChartValues")]
+        [HttpGet]
+        public async Task<ActionResult<List<StringAndValue>>> GetYearChartValues()//not void, should send each artist and how many saved albums the curr user has of them
+        {
+            try
+            {
+
+                var currUserId = HttpContext.Session.GetObject<User>("user").Id;
+                var userSaved = context.SavedAlbums.Include(x => x.Album).Include(x => x.Album.AlbumStyles).Where(x => x.UserId == currUserId).ToList();
+                List<StringAndValue> toReturn = new List<StringAndValue>();
+                for(int i = 1960; i<=2024; i++)
+                {
+                    toReturn.Add(new StringAndValue(i.ToString(), 0));
+                }
+                foreach (var item in userSaved)
+                {
+                    bool found = false;
+                    foreach(var year in toReturn)
+                    {
+                        if(year.String == item.Album.Year.ToString())
+                        {
+                            year.Value++;
+                            found = true;
+                            break;
+                        }
+                    }
+                    if (!found)
+                    {
+                        toReturn.Insert(0, new StringAndValue(item.Album.Year.ToString(), 1));
+                    }
+
+                }
                 return (Ok(toReturn));
             }
             catch
