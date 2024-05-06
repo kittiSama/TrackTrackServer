@@ -58,44 +58,14 @@ namespace TrackTrackServer.Controllers
         #endregion
 
         #region Discogs
-        [Route("GetClosestAlbums")]
-        [HttpGet] //gets the top 5 results when searching q, returns all of their information
-        public async Task<ActionResult> GetClosestAlbums(string q)
-        {
-            try
-            {
-
-                return (Ok(await discogs.GetClosestAlbums(q)));
-            }
-            catch (Exception ex) { return BadRequest(ex); }
-
-        }
-
-        [Route("GetClosestAlbumsShort")]
-        [HttpGet] //gets the top 5 results when searching q, returns just their title and id
-        public async Task<ActionResult> GetClosestAlbumsShort(string q)
-        {
-            try
-            {
-                var res = JObject.Parse(await discogs.GetClosestAlbums(q));
-
-                return (Ok(res["results"][0]["title"] + " - " + res["results"][0]["id"] + "\n" +
-                    res["results"][1]["title"] + " - " + res["results"][1]["id"] + "\n" +
-                    res["results"][2]["title"] + " - " + res["results"][2]["id"] + "\n" +
-                    res["results"][3]["title"] + " - " + res["results"][3]["id"] + "\n" +
-                    res["results"][4]["title"] + " - " + res["results"][4]["id"]));
-            }
-            catch (Exception ex) { return BadRequest(ex); }
-
-        }
 
         [Route("GetClosestAlbumsForApp")]
         [HttpGet] //gets the top 5 results when searching q, returns just their title and id
-        public async Task<ActionResult<AlbumAndHeart[]>> GetClosestAlbumsForApp(string q)
+        public async Task<ActionResult<AlbumAndHeart[]>> GetClosestAlbumsForApp(string q, string SType)
         {
             try
             {
-                var res = JObject.Parse(await discogs.GetClosestAlbums(q));
+                var res = JObject.Parse(await discogs.GetClosestAlbums(q,SType));
                 var output = new AlbumAndHeart[5];
                 User user = HttpContext.Session.GetObject<User>("user");
                 var usersfavscollection = context.Collections.Where(y => y.OwnerId == user.Id && y.Name == "favorites").First();

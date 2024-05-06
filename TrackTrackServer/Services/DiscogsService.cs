@@ -47,12 +47,45 @@ namespace TrackTrackServer.Services
             catch (Exception ex) { Console.WriteLine(ex.Message); }
             return "ooops";
         }
-        public async Task<string> GetClosestAlbums(string q)
+        public async Task<string> GetClosestAlbums(string q, string SType)
         {
             try
             {
-
-                var response = await client.GetAsync(URL + "database/search?q="+q+"&per_page=50&type=release");
+                switch (SType)
+                {
+                    case ("Album Title"):
+                        SType = "album_title";
+                        break;
+                    case ("Artist Name"):
+                        SType = "artist";
+                        break;
+                    case ("Label Name"):
+                        SType = "label";
+                        break;
+                    case ("Genre"):
+                        SType = "genre";
+                        break;
+                    case ("Style"):
+                        SType = "style";
+                        break;
+                    case ("Country"):
+                        SType = "country";
+                        break;
+                    case ("Year"):
+                        SType = "year";
+                        break;
+                    case (""):
+                        SType = "album_title";
+                        break;
+                    case (null):
+                        SType = "album_title";
+                        break;
+                    default:
+                        SType = "album_title";
+                        break;
+                }
+                //var response = await client.GetAsync(URL + "database/search?q="+q+"&per_page=50&type=release");
+                var response = await client.GetAsync(URL + "database/search?"+SType+"="+q+"&per_page=50&type=release");
                 if (response.StatusCode == System.Net.HttpStatusCode.OK)
                 {
                     return await response.Content.ReadAsStringAsync();
