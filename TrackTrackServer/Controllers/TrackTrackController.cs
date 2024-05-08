@@ -393,26 +393,29 @@ namespace TrackTrackServer.Controllers
 
         #region Updates
         [Route("UpdateUser")]
-        [HttpPost] //updates a user based on their id (it remains constant), gets all their new information and saves it
-        public async Task<ActionResult> UpdateUser(long id, string name, string password, string email, string bio)
+        [HttpGet] //updates a user based on their id (it remains constant), gets all their new information and saves it
+        public async Task<bool> UpdateUser(long id, string name, string password, string email, string bio)
         {
             try
             {
                 var user = context.Users.Where(x => x.Id == id).FirstOrDefault();
-                if(user == null) return NotFound("no such user id");
+                if (user == null) return false;
                 Utils.ValidateUser(user);
                 user.Name = name;
                 user.Password = password;
                 user.Email = email;
                 user.Bio = bio;
                 await context.SaveChangesAsync();
-                return Ok("successfully updated user " + id);
+
+                HttpContext.Session.SetObject("user", user);
+
+                return true;
             }
             catch (BadDataException ex)
             {
-                return (Problem(ex.Message));
+                return false;
             }
-            catch (Exception ex) { return  BadRequest(ex.Message); }
+            catch (Exception ex) { return false; }
         }
 
         [Route("RenameCollection")]
@@ -495,12 +498,13 @@ namespace TrackTrackServer.Controllers
         #region Graphs
         [Route("GetArtistChartValues")]
         [HttpGet]
-        public async Task<ActionResult<List<StringAndValue>>> GetArtistChartValues()//not void, should send each artist and how many saved albums the curr user has of them
+        public async Task<ActionResult<List<StringAndValue>>> GetArtistChartValues(long id = -1)//not void, should send each artist and how many saved albums the curr user has of them
         {
             try
             {
-
-                var currUserId = HttpContext.Session.GetObject<User>("user").Id;
+                long currUserId;
+                if (id == -1) { currUserId = HttpContext.Session.GetObject<User>("user").Id; }
+                else { currUserId = id; }
                 var userSaved = context.SavedAlbums.Include(x => x.Album).Where(x => x.UserId == currUserId).ToList();
                 var distinctArtists = userSaved.DistinctBy(x => x.Album.ArtistName);
                 //StringAndValue[] toReturn = new StringAndValue[distinctArtists.Count()];
@@ -523,12 +527,14 @@ namespace TrackTrackServer.Controllers
 
         [Route("GetGenreChartValues")]
         [HttpGet]
-        public async Task<ActionResult<List<StringAndValue>>> GetGenreChartValues()//not void, should send each artist and how many saved albums the curr user has of them
+        public async Task<ActionResult<List<StringAndValue>>> GetGenreChartValues(long id = -1)//not void, should send each artist and how many saved albums the curr user has of them
         {
             try
             {
+                long currUserId;
+                if (id == -1) { currUserId = HttpContext.Session.GetObject<User>("user").Id; }
+                else { currUserId = id; }
 
-                var currUserId = HttpContext.Session.GetObject<User>("user").Id;
                 var userSaved = context.SavedAlbums.Include(x => x.Album).Include(x=>x.Album.AlbumGenres).Where(x => x.UserId == currUserId).ToList();
                 List<StringAndValue> toReturn = new List<StringAndValue>();
                 foreach (var item in userSaved)
@@ -560,12 +566,15 @@ namespace TrackTrackServer.Controllers
 
         [Route("GetStyleChartValues")]
         [HttpGet]
-        public async Task<ActionResult<List<StringAndValue>>> GetStyleChartValues()//not void, should send each artist and how many saved albums the curr user has of them
+        public async Task<ActionResult<List<StringAndValue>>> GetStyleChartValues(long id = -1)//not void, should send each artist and how many saved albums the curr user has of them
         {
             try
             {
 
-                var currUserId = HttpContext.Session.GetObject<User>("user").Id;
+                long currUserId;
+                if (id == -1) { currUserId = HttpContext.Session.GetObject<User>("user").Id; }
+                else { currUserId = id; }
+
                 var userSaved = context.SavedAlbums.Include(x => x.Album).Include(x => x.Album.AlbumStyles).Where(x => x.UserId == currUserId).ToList();
                 List<StringAndValue> toReturn = new List<StringAndValue>();
                 foreach (var item in userSaved)
@@ -597,12 +606,15 @@ namespace TrackTrackServer.Controllers
 
         [Route("GetYearChartValues")]
         [HttpGet]
-        public async Task<ActionResult<List<StringAndValue>>> GetYearChartValues()//not void, should send each artist and how many saved albums the curr user has of them
+        public async Task<ActionResult<List<StringAndValue>>> GetYearChartValues(long id = -1)//not void, should send each artist and how many saved albums the curr user has of them
         {
             try
             {
 
-                var currUserId = HttpContext.Session.GetObject<User>("user").Id;
+                long currUserId;
+                if (id == -1) { currUserId = HttpContext.Session.GetObject<User>("user").Id; }
+                else { currUserId = id; }
+
                 var userSaved = context.SavedAlbums.Include(x => x.Album).Include(x => x.Album.AlbumStyles).Where(x => x.UserId == currUserId).ToList();
                 List<StringAndValue> toReturn = new List<StringAndValue>();
                 for(int i = 1960; i<=2024; i++)
