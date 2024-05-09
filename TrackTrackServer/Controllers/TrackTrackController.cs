@@ -55,6 +55,19 @@ namespace TrackTrackServer.Controllers
 
         }
 
+        [Route("SignOut")]
+        [HttpGet]
+        public async Task<ActionResult> Signout()
+        {
+            try
+            {
+                HttpContext.Session.SetObject("user", null);
+                return (Ok());
+            }
+            catch { return BadRequest(); }
+
+        }
+
         #endregion
 
         #region Discogs
@@ -393,21 +406,21 @@ namespace TrackTrackServer.Controllers
 
         #region Updates
         [Route("UpdateUser")]
-        [HttpGet] //updates a user based on their id (it remains constant), gets all their new information and saves it
-        public async Task<bool> UpdateUser(long id, string name, string password, string email, string bio)
+        [HttpPost] //updates a user based on their id (it remains constant), gets all their new information and saves it
+        public async Task<bool> UpdateUser(User user)
         {
             try
             {
-                var user = context.Users.Where(x => x.Id == id).FirstOrDefault();
+                var foundUser = context.Users.Where(x => x.Id == user.Id).FirstOrDefault();
                 if (user == null) return false;
                 Utils.ValidateUser(user);
-                user.Name = name;
-                user.Password = password;
-                user.Email = email;
-                user.Bio = bio;
+                foundUser.Name = user.Name;
+                foundUser.Password = user.Password;
+                foundUser.Email = user.Email;
+                foundUser.Bio = user.Bio;
                 await context.SaveChangesAsync();
 
-                HttpContext.Session.SetObject("user", user);
+                HttpContext.Session.SetObject("user", foundUser);
 
                 return true;
             }

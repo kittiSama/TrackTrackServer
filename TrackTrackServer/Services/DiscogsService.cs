@@ -54,7 +54,7 @@ namespace TrackTrackServer.Services
                 switch (SType)
                 {
                     case ("Album Title"):
-                        SType = "album_title";
+                        SType = "title";
                         break;
                     case ("Artist Name"):
                         SType = "artist";
@@ -75,13 +75,13 @@ namespace TrackTrackServer.Services
                         SType = "year";
                         break;
                     case (""):
-                        SType = "album_title";
+                        SType = "title";
                         break;
                     case (null):
-                        SType = "album_title";
+                        SType = "title";
                         break;
                     default:
-                        SType = "album_title";
+                        SType = "title";
                         break;
                 }
                 //var response = await client.GetAsync(URL + "database/search?q="+q+"&per_page=50&type=release");
