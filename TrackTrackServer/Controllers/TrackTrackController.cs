@@ -74,7 +74,7 @@ namespace TrackTrackServer.Controllers
 
         [Route("GetClosestAlbumsForApp")]
         [HttpGet] //gets the top 5 results when searching q, returns just their title and id
-        public async Task<ActionResult<AlbumAndHeart[]>> GetClosestAlbumsForApp(string q, string SType, string country == "")
+        public async Task<ActionResult<AlbumAndHeart[]>> GetClosestAlbumsForApp(string q, string SType, string country = "")
         {
             try
             {
