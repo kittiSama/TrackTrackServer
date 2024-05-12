@@ -47,7 +47,7 @@ namespace TrackTrackServer.Services
             catch (Exception ex) { Console.WriteLine(ex.Message); }
             return "ooops";
         }
-        public async Task<string> GetClosestAlbums(string q, string SType)
+        public async Task<string> GetClosestAlbums(string q, string SType, string country)
         {
             try
             {
@@ -85,7 +85,7 @@ namespace TrackTrackServer.Services
                         break;
                 }
                 //var response = await client.GetAsync(URL + "database/search?q="+q+"&per_page=50&type=release");
-                var response = await client.GetAsync(URL + "database/search?"+SType+"="+q+"&per_page=50&type=release");
+                var response = await client.GetAsync(URL + "database/search?"+SType+"="+q+"&country="+country+"&per_page=50&type=release");
                 if (response.StatusCode == System.Net.HttpStatusCode.OK)
                 {
                     return await response.Content.ReadAsStringAsync();

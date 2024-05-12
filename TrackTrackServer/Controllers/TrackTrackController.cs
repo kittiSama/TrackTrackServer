@@ -74,11 +74,11 @@ namespace TrackTrackServer.Controllers
 
         [Route("GetClosestAlbumsForApp")]
         [HttpGet] //gets the top 5 results when searching q, returns just their title and id
-        public async Task<ActionResult<AlbumAndHeart[]>> GetClosestAlbumsForApp(string q, string SType)
+        public async Task<ActionResult<AlbumAndHeart[]>> GetClosestAlbumsForApp(string q, string SType, string country == "")
         {
             try
             {
-                var res = JObject.Parse(await discogs.GetClosestAlbums(q,SType));
+                var res = JObject.Parse(await discogs.GetClosestAlbums(q,SType,country));
                 var output = new AlbumAndHeart[5];
                 User user = HttpContext.Session.GetObject<User>("user");
                 var usersfavscollection = context.Collections.Where(y => y.OwnerId == user.Id && y.Name == "favorites").First();
