@@ -84,6 +84,9 @@ namespace TrackTrackServer.Services
                         SType = "title";
                         break;
                 }
+                if (country == "united states") country = "USA";//disgusting but i have no clue how to fix it otherwise
+
+
                 //var response = await client.GetAsync(URL + "database/search?q="+q+"&per_page=50&type=release");
                 var response = await client.GetAsync(URL + "database/search?"+SType+"="+q+"&country="+country+"&per_page=50&type=release");
                 if (response.StatusCode == System.Net.HttpStatusCode.OK)

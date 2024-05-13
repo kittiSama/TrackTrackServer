@@ -30,12 +30,6 @@ namespace TrackTrackServer.Controllers
         #endregion
 
         #region Misc
-        [Route("Hello")]
-        [HttpGet] //returns hi
-        public async Task<ActionResult> Hello()
-        {
-            return Ok("hi");
-        }
 
         [Route("Login")]
         [HttpPost]
@@ -174,45 +168,6 @@ namespace TrackTrackServer.Controllers
                 return (toReturn);
             }
             catch (Exception ex) { return BadRequest(ex); }
-        }
-
-        [Route("GetUserCollections")]
-        [HttpGet] //gets all the user's collections
-        public async Task<ActionResult> GetUserCollections(long id)
-        {
-            try
-            {
-                var result = context.Collections.Where(x => x.OwnerId == id);
-                if (result == null) return NotFound("user " + id + " either has no collections, or doesn't exist");
-                return (Ok(result));
-            }
-            catch (Exception ex) { return BadRequest(ex.Message); }
-        }
-
-        [Route("GetUserSavedAlbums")]
-        [HttpGet] //gets all the albums in all the user's collections
-        public async Task<ActionResult> GetUserSavedAlbums(long id)
-        {
-            try
-            {
-                var result = context.SavedAlbums.Where(x => x.UserId == id);
-                if (result == null) return NotFound("user " + id + " either has no saved albums, or doesn't exist");
-                return (Ok(result));
-            }
-            catch (Exception ex) { return BadRequest(ex.Message); }
-        }
-
-        [Route("GetAlbumsInCollection")]
-        [HttpGet] //gets all albums in a collection
-        public async Task<ActionResult<List<SavedAlbum>>> GetAlbumsInCollection(long id)
-        {
-            try
-            {
-                var result = context.SavedAlbums.Where(x => x.CollectionId == id).ToList();
-                if (result == null) return NotFound("collection " + id + " either has no albums savd in it, or doesn't exist");
-                return (Ok(result));
-            }
-            catch (Exception ex) { return BadRequest(ex.Message); }
         }
 
         [Route("GetAlbumsInCollectionByName")]
