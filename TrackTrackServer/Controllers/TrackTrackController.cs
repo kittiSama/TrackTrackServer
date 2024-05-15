@@ -211,30 +211,6 @@ namespace TrackTrackServer.Controllers
             }
         }
 
-        [Route("SaveAlbum")]
-        [HttpPost] //saves an album in a specified user's collection
-        public async Task<ActionResult> SaveAlbum(SavedAlbum save)
-        {
-            //Maya <3 Ohad
-            try
-            {
-                if (context.SavedAlbums.Where(x => x.UserId == save.UserId && x.AlbumId == save.AlbumId && x.CollectionId == save.CollectionId).Any())
-                {
-                    return Conflict("that album is already saved in that collection");
-                }
-                else
-                {
-                    save.Date = DateTime.Now;
-                    save.Id = Utils.GenerateUniqueId("savedAlbum", rnd, context);
-                    if(save.Rating==null) save.Rating = 0;
-                    context.SavedAlbums.Add(save);
-                    await context.SaveChangesAsync();
-                    return (Ok("successfully saved " + save.AlbumId + " to your collection " + save.CollectionId));
-                }
-            }
-            catch (Exception ex) { return BadRequest(ex); };
-        }
-
         [Route("SaveAlbumByName")]
         [HttpPost] //saves an album in a specified user's collection
         public async Task<ActionResult> SaveAlbumByName([FromBody] SaveAlbumByNameDTO dto)//make dto for this shit
@@ -384,82 +360,6 @@ namespace TrackTrackServer.Controllers
                 return false;
             }
             catch (Exception ex) { return false; }
-        }
-
-        [Route("RenameCollection")]
-        [HttpPost] //changes a collection's name
-        public async Task<ActionResult> RenameCollection(long id, string name)
-        {
-            try
-            {
-                var coll = context.Collections.Where(x => x.Id == id).FirstOrDefault();
-                if (coll == null) return NotFound("no such collection id");
-                coll.Name = name;
-                await context.SaveChangesAsync();
-                return Ok("successfully changed collection's name");
-            }
-            catch (Exception ex) { return BadRequest(ex.Message); }
-        }
-
-        [Route("UpdateRating")]
-        [HttpPost] //changes the rating given to an album in a collection
-        public async Task<ActionResult> UpdateRating(long id, long rating)
-        {
-            try
-            {
-                var alb = context.SavedAlbums.Where(x => x.Id == id).FirstOrDefault();
-                if (alb == null) return NotFound("no such savedAlbum id");
-                alb.Rating = rating;
-                await context.SaveChangesAsync();
-                return Ok("successfully changed "+alb.AlbumId+"'s rating");
-            }
-            catch (Exception ex) { return BadRequest(ex.Message); }
-        }
-        #endregion
-
-        #region Deletion
-        [Route("RemoveUser")]
-        [HttpDelete] //removes a user, all their collections, and all their saved albums
-        public async Task<ActionResult> RemoveUser(long id)
-        {
-            try
-            {
-                context.SavedAlbums.RemoveRange(context.SavedAlbums.Where(x => x.UserId == id));
-                context.Collections.RemoveRange(context.Collections.Where(x => x.OwnerId == id));
-
-                context.Users.Remove(context.Users.Where(x => x.Id == id).First());
-                await context.SaveChangesAsync();
-                return Ok("successfully removed user " + id+" and all their related rows");
-            }
-            catch (Exception ex) { return BadRequest(ex.Message); }
-        }
-
-        [Route("RemoveCollection")]
-        [HttpDelete] //removes a collection and all albums saved in it
-        public async Task<ActionResult> RemoveCollection(long id)
-        {
-            try
-            {
-                context.SavedAlbums.RemoveRange(context.SavedAlbums.Where(x => x.CollectionId == id));
-
-                context.Collections.Remove(context.Collections.Where(x => x.Id == id).First());
-                await context.SaveChangesAsync();
-                return Ok("successfully removed collection " + id + " and all albums saved in it");
-            }
-            catch (Exception ex) { return BadRequest(ex.Message); }
-        }
-
-        [Route("RemoveAlbumFromCollection")]
-        [HttpDelete] //removes a specific album from a specific collection
-        public async Task<ActionResult> RemoveAlbumFromCollection(long id)
-        {
-            try
-            {
-                context.SavedAlbums.Remove(context.SavedAlbums.Where(x => x.Id == id).First());
-                await context.SaveChangesAsync();
-                return Ok("successfully removed album " + id + " from its collection");
-            }
-            catch (Exception ex) { return BadRequest(ex.Message); }
         }
         #endregion
 
