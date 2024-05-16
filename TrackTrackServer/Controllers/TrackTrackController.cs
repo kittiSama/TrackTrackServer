@@ -187,7 +187,7 @@ namespace TrackTrackServer.Controllers
         #region Create
         [Route("AddUser")]
         [HttpPost] //adds user with the required params, an empty bio and a random unique id. also creates a collection named favorites for them
-        public async Task<ActionResult> AddUser(User user)
+        public async Task<string> AddUser(User user)
         {
             try
             {
@@ -198,16 +198,16 @@ namespace TrackTrackServer.Controllers
                 context.Users.Add(user);
                 await context.SaveChangesAsync();
                 await CreateCollection(new Collection() { Name="favorites", OwnerId=id});
-                HttpContext.Session.SetObject("user", user); 
-                return Ok("successfully added " + user.Name + " to the users, id = " + id);
+                HttpContext.Session.SetObject("user", user);
+                return "good";
             }
             catch (BadDataException ex)
             {
-                return(Problem(ex.Message));
+                return ex.Message;
             }
             catch (Exception ex)
             {
-                return BadRequest(ex);
+                return ex.Message;
             }
         }
 
@@ -338,12 +338,12 @@ namespace TrackTrackServer.Controllers
         #region Updates
         [Route("UpdateUser")]
         [HttpPost] //updates a user based on their id (it remains constant), gets all their new information and saves it
-        public async Task<bool> UpdateUser(User user)
+        public async Task<string> UpdateUser(User user)
         {
             try
             {
                 var foundUser = context.Users.Where(x => x.Id == user.Id).FirstOrDefault();
-                if (user == null) return false;
+                if (user == null) return "no such user id";
                 Utils.ValidateUser(user);
                 foundUser.Name = user.Name;
                 foundUser.Password = user.Password;
@@ -353,13 +353,13 @@ namespace TrackTrackServer.Controllers
 
                 HttpContext.Session.SetObject("user", foundUser);
 
-                return true;
+                return "good";
             }
             catch (BadDataException ex)
             {
-                return false;
+                return ex.Message;
             }
-            catch (Exception ex) { return false; }
+            catch (Exception ex) { return ex.Message; }
         }
         #endregion
 
