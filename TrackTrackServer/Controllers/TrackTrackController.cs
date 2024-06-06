@@ -299,6 +299,7 @@ namespace TrackTrackServer.Controllers
                 if (found != null)
                 {
                     context.SavedAlbums.Remove(found);
+                    await context.SaveChangesAsync();
                     return (Ok("deleted"));
                 }
                 else
